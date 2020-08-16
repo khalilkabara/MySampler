@@ -10,6 +10,10 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "Components/FooterComponent.h"
+#include "Components/HeaderComponent.h"
+#include "Components/SamplerControlsComponent.h"
+#include "Components/ScopeComponent.h"
 
 //==============================================================================
 /**
@@ -24,10 +28,34 @@ public:
 	void paint(juce::Graphics&) override;
 	void resized() override;
 
+	const int samplerWidth = 500;
+	const int samplerHeight = 400;
+	const int border = 10;
+
 private:
-	// This reference is provided as a quick way for your editor to
-	// access the processor object that created it.
+
+	juce::Rectangle<int> localBounds;
+	juce::Rectangle<int> headerRect;
+	juce::Rectangle<int> footerRect;
+	juce::Rectangle<int> scopeRect;
+	juce::Rectangle<int> samplerControlsRect;
+	juce::Rectangle<int> midiKeyboardRect;
+
 	MySamplerAudioProcessor& audioProcessor;
+	HeaderComponent headerComponent;
+	FooterComponent footerComponent;
+	ScopeComponent scopeComponent;
+	SamplerControlsComponent samplerControlsComponent;
+	
+	MidiKeyboardComponent midiKeyboardComponent;
+	
+	// Functions
+	void defineRects();
+	
+	void hostMIDIControllerIsAvailable(bool controllerIsAvailable) override
+	{
+		midiKeyboardComponent.setVisible(!controllerIsAvailable);
+	}
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MySamplerAudioProcessorEditor)
 };

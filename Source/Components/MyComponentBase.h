@@ -13,20 +13,21 @@
 #include <JuceHeader.h>
 #include "JuceHeader.h"
 #include "../PluginProcessor.h"
+
 // #include "../LookAndFeel/CustomGraphics.h"
 
 //==============================================================================
 /*
 */
-class SynthComponentBase : public juce::Component
+class MyComponentBase : public juce::Component
 {
 public:
-	explicit SynthComponentBase(MySamplerAudioProcessor& p) : processor(p)
+	explicit MyComponentBase(MySamplerAudioProcessor& p) : processor(p)
 	{
 		// setLookAndFeel(&mLookAndFeel);
 	}
 
-	virtual ~SynthComponentBase()
+	virtual ~MyComponentBase()
 	{
 	}
 
@@ -58,9 +59,9 @@ public:
 	virtual void defineRects()
 	{
 		localBounds = juce::Rectangle<int>(getLocalBounds().getX() + processor.uiMargin,
-			getLocalBounds().getY() + processor.uiMargin,
-			getLocalBounds().getWidth() - processor.uiMargin * 2,
-			getLocalBounds().getHeight() - processor.uiMargin * 2);
+		                                   getLocalBounds().getY() + processor.uiMargin,
+		                                   getLocalBounds().getWidth() - processor.uiMargin * 2,
+		                                   getLocalBounds().getHeight() - processor.uiMargin * 2);
 	}
 
 	virtual void defineComponents()
@@ -88,8 +89,8 @@ public:
 	juce::Rectangle<int> localBounds;
 
 	const bool debugBoundRects = true;
-	
+
 private:
 
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SynthComponentBase)
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MyComponentBase)
 };

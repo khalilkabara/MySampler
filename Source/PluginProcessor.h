@@ -13,7 +13,7 @@
 //==============================================================================
 /**
 */
-class MySamplerAudioProcessor : public juce::AudioProcessor
+class MySamplerAudioProcessor : public juce::AudioProcessor, MidiKeyboardState::Listener
 {
 public:
 	//==============================================================================
@@ -53,6 +53,11 @@ public:
 	void getStateInformation(juce::MemoryBlock& destData) override;
 	void setStateInformation(const void* data, int sizeInBytes) override;
 
+	Array<float> leftBufferHistory;
+	Array<float> rightBufferHistory;
+	const int bufferHistoryLength = 160;
+	const int bufferHistoryUpdateFrequency = 50;
+	
 	const int uiMargin = 2.5;
 
 	// Classes
@@ -65,6 +70,18 @@ public:
 	juce::AudioProcessorValueTreeState valueTreeState;
 	
 private:
+
+	void handleNoteOn(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
+	{
+	}
+
+	void handleNoteOff(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
+	{
+	}
+
+	
+	void createStateTrees();
+	
 	//==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MySamplerAudioProcessor)
 };
