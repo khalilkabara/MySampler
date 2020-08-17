@@ -55,7 +55,7 @@ public:
 
 	Array<float> leftBufferHistory;
 	Array<float> rightBufferHistory;
-	const int bufferHistoryLength = 160;
+	int bufferHistoryLength = 160;
 	const int bufferHistoryUpdateFrequency = 50;
 	
 	const int uiMargin = 2.5;
@@ -66,10 +66,29 @@ public:
 	const juce::Font myFontTiny = juce::Font(10, juce::Font::FontStyleFlags::plain);
 	const juce::Font headerDisplayFont = juce::Font(15, juce::Font::FontStyleFlags::plain);
 	
-	juce::MidiKeyboardState midiKeyboardState;
-	juce::AudioProcessorValueTreeState valueTreeState;
+	MidiKeyboardState midiKeyboardState;
+	AudioProcessorValueTreeState valueTreeState;
+
+	File currentlyLoadedFile;
+	String currentlyLoadedFilePath = "";
+	AudioFormatManager audioFormatManager;
+	AudioFormatReader* audioFormatReader{ nullptr };
+
+	void loadFile();
+
+	int samplerAttackTime = 0.1;
+	int samplerReleaseTime = 0.1;
+	int maxSampleLength = 10.0;
+
+	double lastSampleRate;
 	
 private:
+
+	Synthesiser mSampler;
+	const int numVoices{ 3 };
+	const int midiNoteForC3{ 60 };
+	const String loadedSampleName = "Sample";
+	const String allowedFileFormats = "*.wav,*.flac,*.alac,*.amr,*.aif,*.aiff,*.mp3,*.aac,*.ogg";
 
 	void handleNoteOn(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
 	{

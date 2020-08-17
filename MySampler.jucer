@@ -19,6 +19,7 @@
         <FILE id="DcCvuD" name="MyComponentBase.h" compile="0" resource="0"
               file="Source/Components/MyComponentBase.h"/>
       </GROUP>
+      <GROUP id="{82BB6808-10BC-4AA3-D063-0A67DF8EA892}" name="Synth"/>
       <FILE id="hqQYYu" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="jIsZVf" name="PluginProcessor.h" compile="0" resource="0"

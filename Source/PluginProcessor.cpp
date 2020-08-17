@@ -23,6 +23,13 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 #endif
 {
 	createStateTrees();
+
+	audioFormatManager.registerBasicFormats();
+	
+	for (auto i = 0; i < numVoices; ++i)
+	{
+		mSampler.addVoice(new SamplerVoice());
+	}
 	
 	for (auto i = 0; i < bufferHistoryLength; ++i)
 	{
@@ -33,6 +40,7 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 
 MySamplerAudioProcessor::~MySamplerAudioProcessor()
 {
+	audioFormatReader =  nullptr;
 }
 
 //==============================================================================
@@ -156,28 +164,39 @@ void MySamplerAudioProcessor::setStateInformation(const void* data, int sizeInBy
 
 void MySamplerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
+	lastSampleRate = sampleRate;
+	mSampler.setCurrentPlaybackSampleRate(sampleRate);
 	midiKeyboardState.reset();
 	midiKeyboardState.addListener(this);
 }
 
 void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-
-
-	buffer.clear();
 	midiKeyboardState.processNextMidiBuffer(midiMessages, 0, buffer.getNumSamples(), true);
-	// mySynth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+	ScopedNoDenormals noDenormals;
+	// auto totalNumInputChannels = getTotalNumInputChannels();
+	// auto totalNumOutputChannels = getTotalNumOutputChannels();
+
+	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
+	{
+		buffer.clear(i, 0, buffer.getNumSamples());
+	}
+
+	mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+
+	// buffer.clear();
 	
 	// Samples for Oscilloscope
 	for (auto i = 0; i < buffer.getNumSamples(); ++i)
 	{
+		
 		if (i % bufferHistoryUpdateFrequency == 0)
 		{
 			auto sample = buffer.getSample(0, i);
 			leftBufferHistory.add(sample);
 			sample = buffer.getSample(1, i);
 			rightBufferHistory.add(sample);
-
+	
 			if (leftBufferHistory.size() > bufferHistoryLength) leftBufferHistory.remove(0);
 			if (rightBufferHistory.size() > bufferHistoryLength) rightBufferHistory.remove(0);
 		}
@@ -191,6 +210,24 @@ void MySamplerAudioProcessor::createStateTrees()
 	
 }
 
+void MySamplerAudioProcessor::loadFile()
+{
+	FileChooser fileChooser{"Select Audio File"};
+	
+	if (fileChooser.browseForFileToOpen())
+	{
+		const auto loadedFile = fileChooser.getResult();
+		currentlyLoadedFile = loadedFile;
+		currentlyLoadedFilePath = loadedFile.getFullPathName();
+		audioFormatReader = audioFormatManager.createReaderFor(loadedFile);
+	}
+	
+	BigInteger midiNotesRange;
+	midiNotesRange.setRange(0, 128, true);
+	
+	mSampler.addSound(new SamplerSound(loadedSampleName,*audioFormatReader, midiNotesRange,
+		midiNoteForC3, samplerAttackTime, samplerReleaseTime, maxSampleLength));
+}
 
 //==============================================================================
 // This creates new instances of the plugin..

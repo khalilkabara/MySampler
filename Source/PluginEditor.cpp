@@ -23,6 +23,8 @@ MySamplerAudioProcessorEditor::MySamplerAudioProcessorEditor(MySamplerAudioProce
 
 	setSize(samplerWidth, samplerHeight);
 
+	p.bufferHistoryLength = samplerWidth;
+	
 	defineRects();
 
 	headerComponent.setSize(headerRect.getWidth(), headerRect.getHeight());
@@ -78,7 +80,7 @@ void MySamplerAudioProcessorEditor::defineRects()
 	headerRect = juce::Rectangle<int>(localBounds.getX(),
 	                                  localBounds.getY(),
 	                                  localBounds.getWidth(),
-	                                  localBounds.getHeight() / 10);
+	                                  localBounds.getHeight() * 0.5 / 10);
 
 	scopeRect = juce::Rectangle<int>(headerRect.getX(),
 	                                 headerRect.getY() + headerRect.getHeight(),
@@ -93,7 +95,7 @@ void MySamplerAudioProcessorEditor::defineRects()
 	footerRect = juce::Rectangle<int>(samplerControlsRect.getX(),
 	                                  samplerControlsRect.getY() + samplerControlsRect.getHeight(),
 	                                  samplerControlsRect.getWidth(),
-	                                  localBounds.getHeight() * 1 / 10);
+	                                  localBounds.getHeight() * 1.5 / 10);
 
 	midiKeyboardRect = juce::Rectangle<int>(footerRect.getX(),
 	                                        footerRect.getY() + footerRect.getHeight(),
