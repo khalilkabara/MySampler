@@ -89,7 +89,9 @@ private:
 	const int numVoices{ 3 };
 	const int midiNoteForC3{ 60 };
 	const String loadedSampleName = "Sample";
-	const String allowedFileFormats = "*.wav,*.flac,*.alac,*.amr,*.aif,*.aiff,*.mp3,*.aac,*.ogg";
+	const String allowedFileFormats = String();
+	// const String allowedFileFormats = "*.wav, *.mp3";
+	// const String allowedFileFormats = ".wav,.flac,.aiff,.mp3,.aac,.ogg";
 
 	void handleNoteOn(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
 	{

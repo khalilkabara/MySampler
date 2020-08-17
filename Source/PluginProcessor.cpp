@@ -210,19 +210,19 @@ void MySamplerAudioProcessor::createStateTrees()
 
 void MySamplerAudioProcessor::loadFileOpen()
 {
-	FileChooser fileChooser{"Select Audio File"};
-
+	FileChooser fileChooser{"Select Audio File", File(), allowedFileFormats };
+		
 	if (fileChooser.browseForFileToOpen())
 	{
 		const auto loadedFile = fileChooser.getResult();
 
-		const WildcardFileFilter filter(audioFormatManager.getWildcardForAllFormats(), {}, {});
-		if (!filter.isFileSuitable(loadedFile)) return;
+		const WildcardFileFilter fileFormatFilter(audioFormatManager.getWildcardForAllFormats(), {}, {});
+		if (!fileFormatFilter.isFileSuitable(loadedFile)) return;
 		
 		currentlyLoadedFile = loadedFile;
 		currentlyLoadedFilePath = loadedFile.getFullPathName();
 		audioFormatReader = audioFormatManager.createReaderFor(loadedFile);
-	}
+	} else return;
 
 	BigInteger midiNotesRange;
 	midiNotesRange.setRange(0, 128, true);
@@ -231,10 +231,10 @@ void MySamplerAudioProcessor::loadFileOpen()
 	                                   midiNoteForC3, samplerAttackTime, samplerReleaseTime, maxSampleLength));
 }
 
-void MySamplerAudioProcessor::loadFile(File file)
+void MySamplerAudioProcessor::loadFile(const File file)
 {
-	const WildcardFileFilter filter(audioFormatManager.getWildcardForAllFormats(), {}, {});
-	if (!filter.isFileSuitable(file)) return;
+	const WildcardFileFilter fileFormatFilter(audioFormatManager.getWildcardForAllFormats(), {}, {});
+	if (!fileFormatFilter.isFileSuitable(file)) return;
 
 	currentlyLoadedFile = file;
 	currentlyLoadedFilePath = file.getFullPathName();
