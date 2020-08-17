@@ -14,6 +14,7 @@ MySamplerAudioProcessorEditor::MySamplerAudioProcessorEditor(MySamplerAudioProce
 	AudioProcessorEditor(&p),
 	audioProcessor(p),
 	headerComponent(p),
+	waveformComponent(p),
 	footerComponent(p),
 	scopeComponent(p),
 	samplerControlsComponent(p),
@@ -23,14 +24,19 @@ MySamplerAudioProcessorEditor::MySamplerAudioProcessorEditor(MySamplerAudioProce
 
 	setSize(samplerWidth, samplerHeight);
 
-	p.bufferHistoryLength = samplerWidth;
-	
 	defineRects();
+
+	p.bufferHistoryLength = scopeRect.getWidth();
 
 	headerComponent.setSize(headerRect.getWidth(), headerRect.getHeight());
 	headerComponent.build();
 	headerComponent.setBounds(headerRect);
 	addAndMakeVisible(&headerComponent);
+
+	waveformComponent.setSize(waveformRect.getWidth(), waveformRect.getHeight());
+	waveformComponent.build();
+	waveformComponent.setBounds(waveformRect);
+	addAndMakeVisible(&waveformComponent);
 
 	scopeComponent.setSize(scopeRect.getWidth(), scopeRect.getHeight());
 	scopeComponent.build();
@@ -82,9 +88,14 @@ void MySamplerAudioProcessorEditor::defineRects()
 	                                  localBounds.getWidth(),
 	                                  localBounds.getHeight() * 0.5 / 10);
 
-	scopeRect = juce::Rectangle<int>(headerRect.getX(),
-	                                 headerRect.getY() + headerRect.getHeight(),
-	                                 headerRect.getWidth(),
+	waveformRect = juce::Rectangle<int>(headerRect.getX(),
+	                                    headerRect.getY() + headerRect.getHeight(),
+	                                    headerRect.getWidth(),
+	                                    localBounds.getHeight() * 1.5 / 10);
+
+	scopeRect = juce::Rectangle<int>(waveformRect.getX(),
+	                                 waveformRect.getY() + waveformRect.getHeight(),
+	                                 waveformRect.getWidth(),
 	                                 localBounds.getHeight() * 3 / 10);
 
 	samplerControlsRect = juce::Rectangle<int>(scopeRect.getX(),
@@ -95,7 +106,7 @@ void MySamplerAudioProcessorEditor::defineRects()
 	footerRect = juce::Rectangle<int>(samplerControlsRect.getX(),
 	                                  samplerControlsRect.getY() + samplerControlsRect.getHeight(),
 	                                  samplerControlsRect.getWidth(),
-	                                  localBounds.getHeight() * 1.5 / 10);
+	                                  localBounds.getHeight() * 0 / 10);
 
 	midiKeyboardRect = juce::Rectangle<int>(footerRect.getX(),
 	                                        footerRect.getY() + footerRect.getHeight(),

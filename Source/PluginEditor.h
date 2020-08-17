@@ -14,6 +14,7 @@
 #include "Components/HeaderComponent.h"
 #include "Components/SamplerControlsComponent.h"
 #include "Components/ScopeComponent.h"
+#include "Components/WaveformComponent.h"
 
 //==============================================================================
 /**
@@ -36,6 +37,7 @@ private:
 
 	juce::Rectangle<int> localBounds;
 	juce::Rectangle<int> headerRect;
+	juce::Rectangle<int> waveformRect;
 	juce::Rectangle<int> footerRect;
 	juce::Rectangle<int> scopeRect;
 	juce::Rectangle<int> samplerControlsRect;
@@ -43,6 +45,7 @@ private:
 
 	MySamplerAudioProcessor& audioProcessor;
 	HeaderComponent headerComponent;
+	WaveformComponent waveformComponent;
 	FooterComponent footerComponent;
 	ScopeComponent scopeComponent;
 	SamplerControlsComponent samplerControlsComponent;
