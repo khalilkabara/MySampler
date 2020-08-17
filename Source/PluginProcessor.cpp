@@ -17,20 +17,20 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 #if ! JucePlugin_IsSynth
 		.withInput("Input", juce::AudioChannelSet::stereo(), true)
 #endif
-		.withOutput("Output", juce::AudioChannelSet::stereo(), true)
+		  .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-	), valueTreeState(*this, nullptr)
+	  ), valueTreeState(*this, nullptr)
 #endif
 {
 	createStateTrees();
 
 	audioFormatManager.registerBasicFormats();
-	
+
 	for (auto i = 0; i < numVoices; ++i)
 	{
 		mSampler.addVoice(new SamplerVoice());
 	}
-	
+
 	for (auto i = 0; i < bufferHistoryLength; ++i)
 	{
 		leftBufferHistory.add(0);
@@ -40,7 +40,7 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 
 MySamplerAudioProcessor::~MySamplerAudioProcessor()
 {
-	audioFormatReader =  nullptr;
+	audioFormatReader = nullptr;
 }
 
 //==============================================================================
@@ -52,7 +52,7 @@ const juce::String MySamplerAudioProcessor::getName() const
 bool MySamplerAudioProcessor::acceptsMidi() const
 {
 #if JucePlugin_WantsMidiInput
-    return true;
+	return true;
 #else
 	return false;
 #endif
@@ -185,18 +185,17 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 
 	// buffer.clear();
-	
+
 	// Samples for Oscilloscope
 	for (auto i = 0; i < buffer.getNumSamples(); ++i)
 	{
-		
 		if (i % bufferHistoryUpdateFrequency == 0)
 		{
 			auto sample = buffer.getSample(0, i);
 			leftBufferHistory.add(sample);
 			sample = buffer.getSample(1, i);
 			rightBufferHistory.add(sample);
-	
+
 			if (leftBufferHistory.size() > bufferHistoryLength) leftBufferHistory.remove(0);
 			if (rightBufferHistory.size() > bufferHistoryLength) rightBufferHistory.remove(0);
 		}
@@ -207,27 +206,47 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 void MySamplerAudioProcessor::createStateTrees()
 {
-	
 }
 
-void MySamplerAudioProcessor::loadFile()
+void MySamplerAudioProcessor::loadFileOpen()
 {
 	FileChooser fileChooser{"Select Audio File"};
-	
+
 	if (fileChooser.browseForFileToOpen())
 	{
 		const auto loadedFile = fileChooser.getResult();
+
+		const WildcardFileFilter filter(audioFormatManager.getWildcardForAllFormats(), {}, {});
+		if (!filter.isFileSuitable(loadedFile)) return;
+		
 		currentlyLoadedFile = loadedFile;
 		currentlyLoadedFilePath = loadedFile.getFullPathName();
 		audioFormatReader = audioFormatManager.createReaderFor(loadedFile);
 	}
-	
+
 	BigInteger midiNotesRange;
 	midiNotesRange.setRange(0, 128, true);
-	
-	mSampler.addSound(new SamplerSound(loadedSampleName,*audioFormatReader, midiNotesRange,
-		midiNoteForC3, samplerAttackTime, samplerReleaseTime, maxSampleLength));
+
+	mSampler.addSound(new SamplerSound(loadedSampleName, *audioFormatReader, midiNotesRange,
+	                                   midiNoteForC3, samplerAttackTime, samplerReleaseTime, maxSampleLength));
 }
+
+void MySamplerAudioProcessor::loadFile(File file)
+{
+	const WildcardFileFilter filter(audioFormatManager.getWildcardForAllFormats(), {}, {});
+	if (!filter.isFileSuitable(file)) return;
+
+	currentlyLoadedFile = file;
+	currentlyLoadedFilePath = file.getFullPathName();
+	audioFormatReader = audioFormatManager.createReaderFor(file);
+
+	BigInteger midiNotesRange;
+	midiNotesRange.setRange(0, 128, true);
+
+	mSampler.addSound(new SamplerSound(loadedSampleName, *audioFormatReader, midiNotesRange,
+	                                   midiNoteForC3, samplerAttackTime, samplerReleaseTime, maxSampleLength));
+}
+
 
 //==============================================================================
 // This creates new instances of the plugin..

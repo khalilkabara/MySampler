@@ -74,14 +74,15 @@ public:
 	AudioFormatManager audioFormatManager;
 	AudioFormatReader* audioFormatReader{ nullptr };
 
-	void loadFile();
-
 	int samplerAttackTime = 0.1;
 	int samplerReleaseTime = 0.1;
 	int maxSampleLength = 10.0;
 
 	double lastSampleRate;
-	
+
+	void loadFileOpen();
+	void loadFile(File file);
+
 private:
 
 	Synthesiser mSampler;

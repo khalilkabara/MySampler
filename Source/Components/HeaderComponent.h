@@ -90,7 +90,7 @@ private:
 
 	void loadFile() const
 	{
-		processor.loadFile();
+		processor.loadFileOpen();
 	}
 
 	const int border = 10;

@@ -17,9 +17,8 @@
 #include "Components/WaveformComponent.h"
 
 //==============================================================================
-/**
-*/
-class MySamplerAudioProcessorEditor : public juce::AudioProcessorEditor
+
+class MySamplerAudioProcessorEditor : public juce::AudioProcessorEditor, public FileDragAndDropTarget
 {
 public:
 	MySamplerAudioProcessorEditor(MySamplerAudioProcessor&);
@@ -33,8 +32,38 @@ public:
 	const int samplerHeight = 400;
 	const int border = 10;
 
-private:
+	void filesDropped(const StringArray& files, int x, int y) override
+	{
+		processor.loadFile(files[0]);
+		fileIsBeingDragged = false;
+		repaint();
+	}
 
+	bool isInterestedInFileDrag(const StringArray& files) override
+	{
+		return true;
+	}
+
+	void fileDragEnter(const StringArray& files, int x, int y) override
+	{
+		fileIsBeingDragged = true;
+		repaint();
+	}
+
+	void fileDragExit(const StringArray& files) override
+	{
+		fileIsBeingDragged = false;
+		repaint();
+	}
+
+private:
+	MySamplerAudioProcessor& processor;
+
+	bool fileIsBeingDragged = false;
+
+	Label fileDragIndicator;
+
+	juce::Rectangle<int> fileDragIndicatorRect;
 	juce::Rectangle<int> localBounds;
 	juce::Rectangle<int> headerRect;
 	juce::Rectangle<int> waveformRect;
@@ -49,12 +78,12 @@ private:
 	FooterComponent footerComponent;
 	ScopeComponent scopeComponent;
 	SamplerControlsComponent samplerControlsComponent;
-	
+
 	MidiKeyboardComponent midiKeyboardComponent;
-	
+
 	// Functions
 	void defineRects();
-	
+
 	void hostMIDIControllerIsAvailable(bool controllerIsAvailable) override
 	{
 		midiKeyboardComponent.setVisible(!controllerIsAvailable);

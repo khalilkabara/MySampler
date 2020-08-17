@@ -11,6 +11,7 @@
 
 //==============================================================================
 MySamplerAudioProcessorEditor::MySamplerAudioProcessorEditor(MySamplerAudioProcessor& p):
+	processor(p),
 	AudioProcessorEditor(&p),
 	audioProcessor(p),
 	headerComponent(p),
@@ -69,6 +70,27 @@ MySamplerAudioProcessorEditor::~MySamplerAudioProcessorEditor()
 //==============================================================================
 void MySamplerAudioProcessorEditor::paint(juce::Graphics& g)
 {
+	g.setFont(processor.myFont);
+
+	if(fileIsBeingDragged)
+	{
+		// fileDragIndicator.setFont(processor.myFont);
+		// fileDragIndicator.setJustificationType(Justification::centred);
+		// fileDragIndicator.setBounds(fileDragIndicatorRect);
+
+		g.setColour(Colours::whitesmoke);
+		g.setOpacity(0.5);
+		g.drawFittedText("Drop File", fileDragIndicatorRect, Justification::centred, 1);
+		// g.fillRect(fileDragIndicatorRect);
+		g.fillRoundedRectangle(fileDragIndicatorRect.getX(), 
+			fileDragIndicatorRect.getY(), 
+			fileDragIndicatorRect.getWidth(), 
+			fileDragIndicatorRect.getHeight(),
+			5);
+	} else
+	{
+		
+	}
 }
 
 void MySamplerAudioProcessorEditor::resized()
@@ -82,6 +104,7 @@ void MySamplerAudioProcessorEditor::defineRects()
 	                                   getLocalBounds().getWidth() - border * 2,
 	                                   getLocalBounds().getHeight() - border * 2);
 
+	fileDragIndicatorRect = localBounds;
 
 	headerRect = juce::Rectangle<int>(localBounds.getX(),
 	                                  localBounds.getY(),
