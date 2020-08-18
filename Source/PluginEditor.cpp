@@ -73,7 +73,6 @@ MySamplerAudioProcessorEditor::~MySamplerAudioProcessorEditor()
 void MySamplerAudioProcessorEditor::paint(juce::Graphics& g)
 {
 	g.setFont(processor.myFont);
-
 }
 
 void MySamplerAudioProcessorEditor::resized()
@@ -92,19 +91,19 @@ void MySamplerAudioProcessorEditor::defineRects()
 	                                  localBounds.getWidth(),
 	                                  localBounds.getHeight() * 0.5 / 10);
 
-	waveformRect = juce::Rectangle<int>(headerRect.getX(),
-	                                    headerRect.getY() + headerRect.getHeight(),
-	                                    headerRect.getWidth(),
-	                                    localBounds.getHeight() * 1.5 / 10);
-
-	scopeRect = juce::Rectangle<int>(waveformRect.getX(),
-	                                 waveformRect.getY() + waveformRect.getHeight(),
-	                                 waveformRect.getWidth(),
+	scopeRect = juce::Rectangle<int>(headerRect.getX(),
+	                                 headerRect.getY() + headerRect.getHeight(),
+	                                 headerRect.getWidth(),
 	                                 localBounds.getHeight() * 3 / 10);
 
-	samplerControlsRect = juce::Rectangle<int>(scopeRect.getX(),
-	                                           scopeRect.getY() + scopeRect.getHeight(),
-	                                           scopeRect.getWidth(),
+	waveformRect = juce::Rectangle<int>(scopeRect.getX(),
+	                                    scopeRect.getY() + scopeRect.getHeight(),
+	                                    scopeRect.getWidth(),
+	                                    localBounds.getHeight() * 1.5 / 10);
+
+	samplerControlsRect = juce::Rectangle<int>(waveformRect.getX(),
+	                                           waveformRect.getY() + waveformRect.getHeight(),
+	                                           waveformRect.getWidth(),
 	                                           localBounds.getHeight() * 3 / 10);
 
 	footerRect = juce::Rectangle<int>(samplerControlsRect.getX(),

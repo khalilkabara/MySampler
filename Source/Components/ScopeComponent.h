@@ -44,6 +44,9 @@ public:
 
 		if (debugBoundRects)
 			g.drawRect(getLocalBounds());
+		
+		// g.drawRect(leftChannelRect);
+		// g.drawRect(rightChannelRect);
 	}
 
 	void resized() override
@@ -55,10 +58,10 @@ public:
 		MyComponentBase::defineRects();
 
 		leftChannelRect = juce::Rectangle<int>(
-			getLocalBounds().getX() + border,
-			getLocalBounds().getY() + border,
-			getLocalBounds().getWidth() - 2 * border,
-			getLocalBounds().getHeight() / 2 - border);
+			getLocalBounds().getX(),
+			getLocalBounds().getY(),
+			getLocalBounds().getWidth(),
+			getLocalBounds().getHeight() / 2);
 
 		rightChannelRect = juce::Rectangle<int>(
 			leftChannelRect.getX(),
@@ -119,7 +122,7 @@ private:
 
 		// Rescale
 		path.scaleToFit(rect.getX(),
-		                rect.getY() + 0.1f * rect.getY(),
+		                rect.getY() + 0.1f * rect.getHeight(),
 		                rect.getWidth(),
 		                0.8f * rect.getHeight(),
 		                false);

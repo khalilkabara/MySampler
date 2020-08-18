@@ -73,15 +73,22 @@ public:
 	String currentlyLoadedFilePath = "";
 	AudioFormatManager audioFormatManager;
 	AudioFormatReader* audioFormatReader{ nullptr };
-
+	AudioBuffer<float> loadedFileWaveform;
+	
+	AudioBuffer<float>& getLoadedFileWaveform() { return loadedFileWaveform; }
+	void clearLoadedWaveform() { loadedFileWaveform.clear(); }
+	
 	int samplerAttackTime = 0.1;
 	int samplerReleaseTime = 0.1;
 	int maxSampleLength = 10.0;
 
 	double lastSampleRate;
+	bool newFileLoaded = false;
+	bool noFileLoadedYet = true;
 
-	void loadFileOpen();
+	void loadFile();
 	void loadFile(File file);
+	void loadFile(String& filePath);
 
 private:
 

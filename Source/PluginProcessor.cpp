@@ -208,28 +208,6 @@ void MySamplerAudioProcessor::createStateTrees()
 {
 }
 
-void MySamplerAudioProcessor::loadFileOpen()
-{
-	FileChooser fileChooser{"Select Audio File", File(), allowedFileFormats };
-		
-	if (fileChooser.browseForFileToOpen())
-	{
-		const auto loadedFile = fileChooser.getResult();
-
-		const WildcardFileFilter fileFormatFilter(audioFormatManager.getWildcardForAllFormats(), {}, {});
-		if (!fileFormatFilter.isFileSuitable(loadedFile)) return;
-		
-		currentlyLoadedFile = loadedFile;
-		currentlyLoadedFilePath = loadedFile.getFullPathName();
-		audioFormatReader = audioFormatManager.createReaderFor(loadedFile);
-	} else return;
-
-	BigInteger midiNotesRange;
-	midiNotesRange.setRange(0, 128, true);
-
-	mSampler.addSound(new SamplerSound(loadedSampleName, *audioFormatReader, midiNotesRange,
-	                                   midiNoteForC3, samplerAttackTime, samplerReleaseTime, maxSampleLength));
-}
 
 void MySamplerAudioProcessor::loadFile(const File file)
 {
@@ -240,6 +218,15 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	currentlyLoadedFilePath = file.getFullPathName();
 	audioFormatReader = audioFormatManager.createReaderFor(file);
 
+	noFileLoadedYet = false;
+	newFileLoaded = true;
+
+	const auto numSamples = static_cast<int>(audioFormatReader->lengthInSamples);
+	loadedFileWaveform.setSize(1, numSamples);
+	
+	audioFormatReader->read(&loadedFileWaveform, 0, numSamples,
+		0, true, false);
+
 	BigInteger midiNotesRange;
 	midiNotesRange.setRange(0, 128, true);
 
@@ -247,6 +234,20 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	                                   midiNoteForC3, samplerAttackTime, samplerReleaseTime, maxSampleLength));
 }
 
+void MySamplerAudioProcessor::loadFile(String& filePath)
+{
+	loadFile(File(filePath));
+}
+
+void MySamplerAudioProcessor::loadFile()
+{
+	FileChooser fileChooser{ "Select Audio File", File(), allowedFileFormats };
+
+	if (fileChooser.browseForFileToOpen())
+	{
+		loadFile(fileChooser.getResult());
+	}
+}
 
 //==============================================================================
 // This creates new instances of the plugin..
