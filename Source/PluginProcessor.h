@@ -71,6 +71,7 @@ public:
 
 	File currentlyLoadedFile;
 	String currentlyLoadedFilePath = "";
+	const String lastLoadedFilePathParamName = "lastLoadedFilePath";
 	AudioFormatManager audioFormatManager;
 	AudioFormatReader* audioFormatReader{ nullptr };
 	AudioBuffer<float> loadedFileWaveform;
@@ -86,30 +87,72 @@ public:
 	bool newFileLoaded = false;
 	bool noFileLoadedYet = true;
 
+	const String envelopeAttackStateName = "envelopeAttack";
+	const String envelopeDecayStateName = "envelopeDecay";
+	const String envelopeSustainStateName = "envelopeSustain";
+	const String envelopeReleaseStateName = "envelopeRelease";
+	const String ampVolumeStateName = "ampVolume";
+	const String ampPanStateName = "ampPan";
+
+	const float zeroToTenMinValue = 0.0;
+	const float zeroToTenMaxValue = 10.0;
+	const float zeroToTenDefaultValue = 0.1;
+	const float zeroToTenMidpointValue = 3.0;
+	const float zeroToTenStepValue = 0.1;
+	
+	const float zeroToOneMinValue = 0.0;
+	const float zeroToOneMaxValue = 1.0;
+	const float zeroToOneDefaultValue = 0.8;
+	const float zeroToOneMidpointValue = 0.3;
+	const float zeroToOneStepValue = 0.01;
+	
+	const float bipolarMinValue = -1.0;
+	const float bipolarMaxValue = 1.0;
+	const float bipolarDefaultValue = 0.0;
+	const float bipolarMidpointValue = 0.0;
+	const float bipolarStepValue = 0.01;
+
+	const float panMinValue = -1.0;
+	const float panMaxValue = 1.0;
+	const float panDefaultValue = 0.0;
+	const float panMidpointValue = 0.0;
+	const float panStepValue = 0.01;
+
 	void loadFile();
 	void loadFile(File file);
 	void loadFile(String& filePath);
 
 private:
 
+	UndoManager undoManager{ 30000, 30 };
+
+	dsp::ProcessSpec spec;
+	ADSR ampEnvelope;
+	ADSR::Parameters ampEnvelopeParams;
+	juce::dsp::Panner<float> ampPan;
 	Synthesiser mSampler;
+
+	float ampVolume = 0.8;
 	const int numVoices{ 3 };
 	const int midiNoteForC3{ 60 };
 	const String loadedSampleName = "Sample";
 	const String allowedFileFormats = String();
-	// const String allowedFileFormats = "*.wav, *.mp3";
-	// const String allowedFileFormats = ".wav,.flac,.aiff,.mp3,.aac,.ogg";
+	// const String allowedFileFormats = "*.wav,*.flac,*.aiff,*.mp3,*.aac,*.ogg";
 
 	void handleNoteOn(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
 	{
+		ampEnvelope.noteOn();
 	}
 
 	void handleNoteOff(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
 	{
+		ampEnvelope.noteOff();
 	}
 
-	
 	void createStateTrees();
+	void initializeEffects(dsp::ProcessSpec&);
+	void updateEffects();
+	void processEffects(AudioBuffer<float>& buffer, dsp::ProcessContextReplacing<float>);
 	
 	//==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MySamplerAudioProcessor)

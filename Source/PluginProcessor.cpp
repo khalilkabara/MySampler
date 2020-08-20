@@ -19,10 +19,16 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 #endif
 		  .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-	  ), valueTreeState(*this, nullptr)
+	  ), valueTreeState(*this, &undoManager)
 #endif
 {
 	createStateTrees();
+
+	// const auto tree = valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr);
+	// currentlyLoadedFilePath = tree.getProperty(lastLoadedFilePathParamName, "");
+	// loadFile(currentlyLoadedFilePath);
+
+	// HeaderComponent::displayText = currentlyLoadedFilePath;
 
 	audioFormatManager.registerBasicFormats();
 
@@ -147,17 +153,25 @@ juce::AudioProcessorEditor* MySamplerAudioProcessor::createEditor()
 }
 
 //==============================================================================
-void MySamplerAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
+
+
+//=================================PERSISTENCE=============================================
+void MySamplerAudioProcessor::getStateInformation(MemoryBlock& destData)
 {
-	// You should use this method to store your parameters in the memory block.
-	// You could do that either as raw data, or use the XML or ValueTree classes
-	// as intermediaries to make it easy to save and load complex data.
+	// std::unique_ptr<XmlElement> xml(valueTreeState.state.createXml());
+	// copyXmlToBinary(*xml, destData);
+
+	// const auto tree = valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr);
+	// currentlyLoadedFilePath = tree.getProperty(lastLoadedFilePathParamName, "");
+	// loadFile(currentlyLoadedFilePath);
 }
 
 void MySamplerAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-	// You should use this method to restore your parameters from this memory block,
-	// whose contents will have been created by the getStateInformation() call.
+	const std::unique_ptr<XmlElement> loadedParams(getXmlFromBinary(data, sizeInBytes));
+	if (loadedParams != nullptr)
+		if (loadedParams->hasTagName(valueTreeState.state.getType()))
+			valueTreeState.state = ValueTree::fromXml(*loadedParams);
 }
 
 //######################################################################################################################################
@@ -168,14 +182,19 @@ void MySamplerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
 	mSampler.setCurrentPlaybackSampleRate(sampleRate);
 	midiKeyboardState.reset();
 	midiKeyboardState.addListener(this);
+
+	spec.sampleRate = sampleRate;
+	spec.maximumBlockSize = samplesPerBlock;
+	spec.numChannels = getTotalNumOutputChannels();
+	initializeEffects(spec);
 }
 
 void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+	dsp::AudioBlock<float> block(buffer);
+
 	midiKeyboardState.processNextMidiBuffer(midiMessages, 0, buffer.getNumSamples(), true);
 	ScopedNoDenormals noDenormals;
-	// auto totalNumInputChannels = getTotalNumInputChannels();
-	// auto totalNumOutputChannels = getTotalNumOutputChannels();
 
 	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
 	{
@@ -184,7 +203,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 
-	// buffer.clear();
+	processEffects(buffer, dsp::ProcessContextReplacing<float>(block));
 
 	// Samples for Oscilloscope
 	for (auto i = 0; i < buffer.getNumSamples(); ++i)
@@ -204,11 +223,6 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 //######################################################################################################################################
 
-void MySamplerAudioProcessor::createStateTrees()
-{
-}
-
-
 void MySamplerAudioProcessor::loadFile(const File file)
 {
 	const WildcardFileFilter fileFormatFilter(audioFormatManager.getWildcardForAllFormats(), {}, {});
@@ -218,14 +232,19 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	currentlyLoadedFilePath = file.getFullPathName();
 	audioFormatReader = audioFormatManager.createReaderFor(file);
 
+	// valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
+	//               .setProperty(lastLoadedFilePathParamName, currentlyLoadedFilePath, nullptr);
+
+	// HeaderComponent::displayText = currentlyLoadedFilePath;
+
 	noFileLoadedYet = false;
 	newFileLoaded = true;
 
 	const auto numSamples = static_cast<int>(audioFormatReader->lengthInSamples);
 	loadedFileWaveform.setSize(1, numSamples);
-	
+
 	audioFormatReader->read(&loadedFileWaveform, 0, numSamples,
-		0, true, false);
+	                        0, true, false);
 
 	BigInteger midiNotesRange;
 	midiNotesRange.setRange(0, 128, true);
@@ -236,12 +255,15 @@ void MySamplerAudioProcessor::loadFile(const File file)
 
 void MySamplerAudioProcessor::loadFile(String& filePath)
 {
+	// HeaderComponent::displayText = currentlyLoadedFilePath;
+	if (filePath.isEmpty()) return;
+
 	loadFile(File(filePath));
 }
 
 void MySamplerAudioProcessor::loadFile()
 {
-	FileChooser fileChooser{ "Select Audio File", File(), allowedFileFormats };
+	FileChooser fileChooser{"Select Audio File", File(), allowedFileFormats};
 
 	if (fileChooser.browseForFileToOpen())
 	{
@@ -249,8 +271,101 @@ void MySamplerAudioProcessor::loadFile()
 	}
 }
 
-//==============================================================================
-// This creates new instances of the plugin..
+void MySamplerAudioProcessor::initializeEffects(dsp::ProcessSpec& spec)
+{
+	ampPan.setRule(dsp::PannerRule::balanced);
+	ampPan.prepare(spec);
+
+	ampEnvelope.reset();
+	ampEnvelope.setSampleRate(lastSampleRate);
+}
+
+void MySamplerAudioProcessor::updateEffects()
+{
+	ampVolume = static_cast<float>(*valueTreeState.getRawParameterValue(ampVolumeStateName));
+	ampPan.setPan(static_cast<float>(*valueTreeState.getRawParameterValue(ampPanStateName)));
+
+	ampEnvelopeParams.attack = static_cast<float>(*valueTreeState.getRawParameterValue(envelopeAttackStateName));
+	ampEnvelopeParams.decay = static_cast<float>(*valueTreeState.getRawParameterValue(envelopeSustainStateName));
+	ampEnvelopeParams.sustain = static_cast<float>(*valueTreeState.getRawParameterValue(ampPanStateName));
+	ampEnvelopeParams.release = static_cast<float>(*valueTreeState.getRawParameterValue(envelopeReleaseStateName));
+	ampEnvelope.setParameters(ampEnvelopeParams);
+
+	for (auto i = 0; i < mSampler.getNumSounds(); ++i)
+	{
+		if(auto sound = dynamic_cast<SamplerSound*>(mSampler.getSound(i).get()))
+		{
+			sound->setEnvelopeParameters(ampEnvelopeParams);
+		}
+	}
+}
+
+void MySamplerAudioProcessor::processEffects(AudioBuffer<float>& buffer, dsp::ProcessContextReplacing<float> dspContext)
+{
+	updateEffects();
+	ampPan.process(dspContext);
+
+	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
+	{
+		buffer.applyGain(channel, 0, buffer.getNumSamples(), ampVolume);
+	}
+}
+
+void MySamplerAudioProcessor::createStateTrees()
+{
+	using Parameter = AudioProcessorValueTreeState::Parameter;
+
+	NormalisableRange<float> envelopeParamRange{zeroToTenMinValue, zeroToTenMaxValue};
+	NormalisableRange<float> zeroToOneParamRange{zeroToOneMinValue, zeroToOneMaxValue};
+	NormalisableRange<float> panParamRange{panMinValue, panMaxValue};
+	NormalisableRange<float> bipolarParamRange{bipolarMinValue, bipolarMaxValue};
+
+	// Vol & Pan
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(ampVolumeStateName,
+	                                                                 ampVolumeStateName,
+	                                                                 ampVolumeStateName,
+	                                                                 zeroToOneParamRange,
+	                                                                 zeroToOneDefaultValue,
+	                                                                 nullptr, nullptr));
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(ampPanStateName,
+	                                                                 ampPanStateName,
+	                                                                 ampPanStateName,
+	                                                                 panParamRange,
+	                                                                 panDefaultValue,
+	                                                                 nullptr, nullptr));
+
+	// Envelope
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(envelopeAttackStateName,
+	                                                                 envelopeAttackStateName,
+	                                                                 envelopeAttackStateName,
+	                                                                 envelopeParamRange,
+	                                                                 zeroToTenMinValue,
+	                                                                 nullptr, nullptr));
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(envelopeDecayStateName,
+	                                                                 envelopeDecayStateName,
+	                                                                 envelopeDecayStateName,
+	                                                                 envelopeParamRange,
+	                                                                 zeroToTenDefaultValue,
+	                                                                 nullptr, nullptr));
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(envelopeSustainStateName,
+	                                                                 envelopeSustainStateName,
+	                                                                 envelopeSustainStateName,
+	                                                                 zeroToOneParamRange,
+	                                                                 zeroToOneDefaultValue,
+	                                                                 nullptr, nullptr));
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(envelopeReleaseStateName,
+	                                                                 envelopeReleaseStateName,
+	                                                                 envelopeReleaseStateName,
+	                                                                 envelopeParamRange,
+	                                                                 zeroToTenDefaultValue,
+	                                                                 nullptr, nullptr));
+}
+
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
 	return new MySamplerAudioProcessor();

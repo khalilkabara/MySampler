@@ -50,7 +50,6 @@ public:
 			g.setColour(Colours::whitesmoke);
 			g.setOpacity(0.5);
 			g.drawFittedText("Drop File", fileDragIndicatorRect, Justification::centred, 1);
-			// g.fillRect(fileDragIndicatorRect);
 			g.fillRoundedRectangle(fileDragIndicatorRect.getX(),
 			                       fileDragIndicatorRect.getY(),
 			                       fileDragIndicatorRect.getWidth(),
@@ -128,6 +127,8 @@ private:
 
 	void drawWaveform(Graphics& g)
 	{
+		if(processor.noFileLoadedYet) return;
+		
 		const auto waveform = processor.getLoadedFileWaveform();
 		auto ratio = waveform.getNumSamples() / localBounds.getWidth();
 

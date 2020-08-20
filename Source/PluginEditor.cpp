@@ -9,6 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+// String HeaderComponent::displayText = "Lorem Ipsum";
+
 //==============================================================================
 MySamplerAudioProcessorEditor::MySamplerAudioProcessorEditor(MySamplerAudioProcessor& p):
 	processor(p),
