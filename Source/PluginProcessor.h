@@ -65,6 +65,7 @@ public:
 	const juce::Font myFontSmall = juce::Font(12, juce::Font::FontStyleFlags::plain);
 	const juce::Font myFontTiny = juce::Font(10, juce::Font::FontStyleFlags::plain);
 	const juce::Font headerDisplayFont = juce::Font(15, juce::Font::FontStyleFlags::plain);
+	const String SAVED_PARAMS_NAME{"mySamplerSavedParams"};
 	
 	MidiKeyboardState midiKeyboardState;
 	AudioProcessorValueTreeState valueTreeState;
@@ -78,15 +79,25 @@ public:
 	
 	AudioBuffer<float>& getLoadedFileWaveform() { return loadedFileWaveform; }
 	void clearLoadedWaveform() { loadedFileWaveform.clear(); }
-	
+
 	int samplerAttackTime = 0.1;
 	int samplerReleaseTime = 0.1;
-	int maxSampleLength = 10.0;
+	float loadedFileNumSamples = 10.0;
+	float loadedSampleLengthSecs;
+	const float maxAllowedSampleLengthSecs = 30.0;
+	int lastPlaybackPosition;
+	bool mIsNotePlayed{false};
 
-	double lastSampleRate;
+	float lastSampleRate;
 	bool newFileLoaded = false;
 	bool noFileLoadedYet = true;
+	bool restartOnKeyUp = true;
 
+	const String switchTooltip = "switch;";
+	const String effectTooltip = "effect;";
+	const String bipolarTooltip = "bipolar;";
+	const String bipolarEffectTooltip = "bipolarEffect;";
+	
 	const String envelopeAttackStateName = "envelopeAttack";
 	const String envelopeDecayStateName = "envelopeDecay";
 	const String envelopeSustainStateName = "envelopeSustain";

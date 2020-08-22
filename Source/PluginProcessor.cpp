@@ -19,17 +19,16 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 #endif
 		  .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-	  ), valueTreeState(*this, &undoManager)
+	  ), valueTreeState(*this, nullptr)
 #endif
 {
 	createStateTrees();
-
-	// const auto tree = valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr);
-	// currentlyLoadedFilePath = tree.getProperty(lastLoadedFilePathParamName, "");
-	// loadFile(currentlyLoadedFilePath);
+	valueTreeState.state = ValueTree(SAVED_PARAMS_NAME);
 
 	// HeaderComponent::displayText = currentlyLoadedFilePath;
 
+	mSampler.clearVoices();
+	mSampler.clearSounds();
 	audioFormatManager.registerBasicFormats();
 
 	for (auto i = 0; i < numVoices; ++i)
@@ -158,20 +157,33 @@ juce::AudioProcessorEditor* MySamplerAudioProcessor::createEditor()
 //=================================PERSISTENCE=============================================
 void MySamplerAudioProcessor::getStateInformation(MemoryBlock& destData)
 {
-	// std::unique_ptr<XmlElement> xml(valueTreeState.state.createXml());
-	// copyXmlToBinary(*xml, destData);
+	valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
+	              .setProperty(lastLoadedFilePathParamName, currentlyLoadedFilePath, nullptr);
 
-	// const auto tree = valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr);
-	// currentlyLoadedFilePath = tree.getProperty(lastLoadedFilePathParamName, "");
-	// loadFile(currentlyLoadedFilePath);
+	std::unique_ptr<XmlElement> xml(valueTreeState.state.createXml());
+	copyXmlToBinary(*xml, destData);
 }
 
 void MySamplerAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
 	const std::unique_ptr<XmlElement> loadedParams(getXmlFromBinary(data, sizeInBytes));
 	if (loadedParams != nullptr)
+	{
 		if (loadedParams->hasTagName(valueTreeState.state.getType()))
+		{
 			valueTreeState.state = ValueTree::fromXml(*loadedParams);
+			currentlyLoadedFilePath = valueTreeState.state
+			                                        .getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
+			                                        .getProperty(lastLoadedFilePathParamName);
+
+			if (currentlyLoadedFilePath.isNotEmpty())
+			{
+				noFileLoadedYet = false;
+				newFileLoaded = true;
+				loadFile(currentlyLoadedFilePath);
+			}
+		}
+	}
 }
 
 //######################################################################################################################################
@@ -196,13 +208,44 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	midiKeyboardState.processNextMidiBuffer(midiMessages, 0, buffer.getNumSamples(), true);
 	ScopedNoDenormals noDenormals;
 
-	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
+	MidiMessage midiMessage;
+	MidiBuffer::Iterator midiIterator{midiMessages};
+	int sample{0};
+
+	while (midiIterator.getNextEvent(midiMessage, sample))
 	{
-		buffer.clear(i, 0, buffer.getNumSamples());
+		if (midiMessage.isNoteOn()) mIsNotePlayed = true;
+		else if (midiMessage.isNoteOff())
+		{
+			mIsNotePlayed = false;
+			lastPlaybackPosition = 0;
+		}
 	}
 
-	mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+	HeaderComponent::displayText = static_cast<String>(lastPlaybackPosition);
 
+	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
+	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
+
+	if (mIsNotePlayed)
+	{
+		for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
+		{
+			buffer.copyFrom(channel,
+			                0,
+			                loadedFileWaveform,
+			                channel % loadedFileWaveform.getNumChannels(),
+			                lastPlaybackPosition,
+			                samplesThisTime);
+		}
+
+		lastPlaybackPosition += samplesThisTime;
+
+		if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
+			lastPlaybackPosition = 0;
+	}
+
+	// mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 	processEffects(buffer, dsp::ProcessContextReplacing<float>(block));
 
 	// Samples for Oscilloscope
@@ -228,29 +271,40 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	const WildcardFileFilter fileFormatFilter(audioFormatManager.getWildcardForAllFormats(), {}, {});
 	if (!fileFormatFilter.isFileSuitable(file)) return;
 
+	// shutdownAudio();
+	clearLoadedWaveform();
+
 	currentlyLoadedFile = file;
 	currentlyLoadedFilePath = file.getFullPathName();
 	audioFormatReader = audioFormatManager.createReaderFor(file);
+	loadedFileNumSamples = static_cast<float>(audioFormatReader->lengthInSamples);
+	loadedSampleLengthSecs = loadedFileNumSamples / audioFormatReader->sampleRate;
+	if (loadedSampleLengthSecs > maxAllowedSampleLengthSecs) loadedSampleLengthSecs = maxAllowedSampleLengthSecs;
 
-	// valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
-	//               .setProperty(lastLoadedFilePathParamName, currentlyLoadedFilePath, nullptr);
+	HeaderComponent::displayText = static_cast<String>(loadedFileNumSamples);
 
-	// HeaderComponent::displayText = currentlyLoadedFilePath;
+	loadedFileWaveform.setSize(2, static_cast<int>(loadedFileNumSamples));
 
-	noFileLoadedYet = false;
-	newFileLoaded = true;
+	audioFormatReader->read(&loadedFileWaveform, 0, static_cast<int>(loadedFileNumSamples),
+	                        0, true, true);
 
-	const auto numSamples = static_cast<int>(audioFormatReader->lengthInSamples);
-	loadedFileWaveform.setSize(1, numSamples);
-
-	audioFormatReader->read(&loadedFileWaveform, 0, numSamples,
-	                        0, true, false);
+	lastPlaybackPosition = 0;
 
 	BigInteger midiNotesRange;
 	midiNotesRange.setRange(0, 128, true);
 
 	mSampler.addSound(new SamplerSound(loadedSampleName, *audioFormatReader, midiNotesRange,
-	                                   midiNoteForC3, samplerAttackTime, samplerReleaseTime, maxSampleLength));
+	                                   midiNoteForC3, samplerAttackTime, samplerReleaseTime, loadedSampleLengthSecs));
+
+	// currentlyLoadedFilePath.isNotEmpty()
+	// 	? HeaderComponent::setDisplayText(currentlyLoadedFilePath)
+	// 	: HeaderComponent::setDisplayText("Empty");
+
+	valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
+	              .setProperty(lastLoadedFilePathParamName, currentlyLoadedFilePath, nullptr);
+
+	noFileLoadedYet = false;
+	newFileLoaded = true;
 }
 
 void MySamplerAudioProcessor::loadFile(String& filePath)
@@ -293,7 +347,7 @@ void MySamplerAudioProcessor::updateEffects()
 
 	for (auto i = 0; i < mSampler.getNumSounds(); ++i)
 	{
-		if(auto sound = dynamic_cast<SamplerSound*>(mSampler.getSound(i).get()))
+		if (auto sound = dynamic_cast<SamplerSound*>(mSampler.getSound(i).get()))
 		{
 			sound->setEnvelopeParameters(ampEnvelopeParams);
 		}

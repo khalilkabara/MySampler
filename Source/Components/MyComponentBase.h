@@ -13,18 +13,16 @@
 #include <JuceHeader.h>
 #include "JuceHeader.h"
 #include "../PluginProcessor.h"
-
-// #include "../LookAndFeel/CustomGraphics.h"
+#include "../LookAndFeel/CustomGraphics.h"
 
 //==============================================================================
-/*
-*/
+
 class MyComponentBase : public juce::Component
 {
 public:
 	explicit MyComponentBase(MySamplerAudioProcessor& p) : processor(p)
 	{
-		// setLookAndFeel(&mLookAndFeel);
+		setLookAndFeel(&mLookAndFeel);
 	}
 
 	virtual ~MyComponentBase()
@@ -84,7 +82,7 @@ public:
 
 	MySamplerAudioProcessor& processor;
 
-	// CustomGraphics mLookAndFeel;
+	CustomGraphics mLookAndFeel;
 
 	juce::Rectangle<int> localBounds;
 

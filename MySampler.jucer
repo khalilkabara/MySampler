@@ -6,7 +6,26 @@
               pluginRTASCategory="0,2048" pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
               displaySplashScreen="1">
   <MAINGROUP id="YNfNzI" name="MySampler">
+    <GROUP id="{444F90A2-64A0-76AA-B2A0-C84E067B4AE1}" name="Resources">
+      <FILE id="MCfRPr" name="background.png" compile="0" resource="1" file="Resources/background.png"/>
+      <FILE id="fIhnKo" name="combo_box.png" compile="0" resource="1" file="Resources/combo_box.png"/>
+      <FILE id="UQ11ak" name="display_area.png" compile="0" resource="1"
+            file="Resources/display_area.png"/>
+      <FILE id="EZC8IW" name="knob.png" compile="0" resource="1" file="Resources/knob.png"/>
+      <FILE id="NEOezA" name="slider_gap.png" compile="0" resource="1" file="Resources/slider_gap.png"/>
+      <FILE id="KXE0wG" name="slider_handle.png" compile="0" resource="1"
+            file="Resources/slider_handle.png"/>
+      <FILE id="lJJwyI" name="switch_knob.png" compile="0" resource="1" file="Resources/switch_knob.png"/>
+      <FILE id="Q0tz7G" name="toggle_button.png" compile="0" resource="1"
+            file="Resources/toggle_button.png"/>
+    </GROUP>
     <GROUP id="{F09EFD52-0F48-D725-8BF6-B396DEBD89D8}" name="Source">
+      <GROUP id="{DBADA14A-4D66-8202-9AC6-7235CEDDCC71}" name="LookAndFeel">
+        <FILE id="S0mXwX" name="CustomGraphics.cpp" compile="1" resource="0"
+              file="Source/LookAndFeel/CustomGraphics.cpp"/>
+        <FILE id="iQuCjB" name="CustomGraphics.h" compile="0" resource="0"
+              file="Source/LookAndFeel/CustomGraphics.h"/>
+      </GROUP>
       <GROUP id="{411586D8-7724-CC67-125E-220663928380}" name="Components">
         <FILE id="FAQoB7" name="WaveformComponent.h" compile="0" resource="0"
               file="Source/Components/WaveformComponent.h"/>
@@ -21,7 +40,6 @@
         <FILE id="DcCvuD" name="MyComponentBase.h" compile="0" resource="0"
               file="Source/Components/MyComponentBase.h"/>
       </GROUP>
-      <GROUP id="{82BB6808-10BC-4AA3-D063-0A67DF8EA892}" name="Synth"/>
       <FILE id="hqQYYu" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="jIsZVf" name="PluginProcessor.h" compile="0" resource="0"

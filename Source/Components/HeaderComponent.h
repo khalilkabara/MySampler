@@ -37,7 +37,7 @@ public:
 		mPaint(g, headerSectionImage);
 
 		// g.fillAll(Colours::aqua);
-		// g.drawFittedText(displayText, getLocalBounds(), Justification::centred, 1);
+		g.drawFittedText(displayText, getLocalBounds(), Justification::centred, 1);
 
 	}
 
@@ -59,12 +59,12 @@ public:
 		
 	}
 
-	// static void setDisplayText(const String text)
-	// {
-	// 	displayText = text;
-	// }
+	static void setDisplayText(const String text)
+	{
+		displayText = text;
+	}
 
-	// static String displayText;
+	static String displayText;
 
 private:
 

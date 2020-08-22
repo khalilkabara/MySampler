@@ -61,7 +61,7 @@ public:
 		{
 			drawWaveform(g);
 			processor.newFileLoaded = false;
-			processor.clearLoadedWaveform();
+			// processor.clearLoadedWaveform();
 		}
 	}
 
@@ -94,7 +94,7 @@ public:
 	}
 
 private:
-
+	
 	const int fps = 10;
 	Array<float> channelData;
 	bool fileIsBeingDragged = false;

@@ -9,7 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-// String HeaderComponent::displayText = "Lorem Ipsum";
+String HeaderComponent::displayText = "Lorem Ipsum";
 
 //==============================================================================
 MySamplerAudioProcessorEditor::MySamplerAudioProcessorEditor(MySamplerAudioProcessor& p):
@@ -96,12 +96,12 @@ void MySamplerAudioProcessorEditor::defineRects()
 	scopeRect = juce::Rectangle<int>(headerRect.getX(),
 	                                 headerRect.getY() + headerRect.getHeight(),
 	                                 headerRect.getWidth(),
-	                                 localBounds.getHeight() * 3 / 10);
+	                                 localBounds.getHeight() * 2.25 / 10);
 
 	waveformRect = juce::Rectangle<int>(scopeRect.getX(),
 	                                    scopeRect.getY() + scopeRect.getHeight(),
 	                                    scopeRect.getWidth(),
-	                                    localBounds.getHeight() * 1.5 / 10);
+	                                    localBounds.getHeight() * 2.25 / 10);
 
 	samplerControlsRect = juce::Rectangle<int>(waveformRect.getX(),
 	                                           waveformRect.getY() + waveformRect.getHeight(),
