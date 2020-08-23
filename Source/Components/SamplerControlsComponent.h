@@ -13,43 +13,50 @@
 #include <JuceHeader.h>
 
 #include "MyComponentBase.h"
+#include "VisualEnvelopeComponent.h"
 
 //==============================================================================
 
-class SamplerControlsComponent : public MyComponentBase, public Slider::Listener, public Button::Listener
+class SamplerControlsComponent : public MyComponentBase,
+                                 public Slider::Listener,
+                                 public Button::Listener
+
 {
 public:
 
-	SamplerControlsComponent(MySamplerAudioProcessor& p) : MyComponentBase(p)
+	SamplerControlsComponent(MySamplerAudioProcessor& p) : MyComponentBase(p),
+	                                                       visualEnvelopeComponent(p)
 	{
 		// controlsSectionImage = ImageCache::getFromMemory(BinaryData::reverb_section_art_png,
 		//                                                BinaryData::reverb_section_art_pngSize);
-		//
 		
 		envelopeAttackAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                processor.envelopeAttackStateName,
-		                                                                                envelopeAttackKnob));
-		
+		                                                                                  processor.
+		                                                                                  envelopeAttackStateName,
+		                                                                                  envelopeAttackKnob));
+
 		envelopeDecayAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                processor.envelopeDecayStateName,
-		                                                                                envelopeDecayKnob));
-		
+		                                                                                 processor.
+		                                                                                 envelopeDecayStateName,
+		                                                                                 envelopeDecayKnob));
+
 		envelopeSustainAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                processor.envelopeSustainStateName,
-		                                                                                envelopeSustainKnob));
-		
+		                                                                                   processor.
+		                                                                                   envelopeSustainStateName,
+		                                                                                   envelopeSustainKnob));
+
 		envelopeReleaseAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                processor.envelopeReleaseStateName,
-		                                                                                envelopeReleaseKnob));
-		
+		                                                                                   processor.
+		                                                                                   envelopeReleaseStateName,
+		                                                                                   envelopeReleaseKnob));
+
 		ampPanAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                processor.ampPanStateName,
-		                                                                                ampPanKnob));
-		
+		                                                                          processor.ampPanStateName,
+		                                                                          ampPanKnob));
+
 		ampVolumeAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                processor.ampVolumeStateName,
-		                                                                                ampVolumeKnob));
-		
+		                                                                             processor.ampVolumeStateName,
+		                                                                             ampVolumeKnob));
 	}
 
 	~SamplerControlsComponent()
@@ -61,18 +68,18 @@ public:
 		mPaint(g, controlsSectionImage);
 
 		// g.drawFittedText("Reverb", titleRect, Justification::centred, 1);
-		
+
 		g.setFont(processor.myFontTiny);
-		
+
 		g.drawFittedText("Filter", filterTitleRect, Justification::centred, 1);
 		g.drawFittedText("LFO", LfoTitleRect, Justification::centred, 1);
-		
+
 		g.drawFittedText("Envelope", envelopeTitleRect, Justification::centred, 1);
 		g.drawFittedText("Attack", envelopeAttackKnobLabelRect, Justification::centred, 1);
 		g.drawFittedText("Decay", envelopeDecayKnobLabelRect, Justification::centred, 1);
 		g.drawFittedText("Sustain", envelopeSustainKnobLabelRect, Justification::centred, 1);
 		g.drawFittedText("Release", envelopeReleaseKnobLabelRect, Justification::centred, 1);
-		
+
 		g.drawFittedText("Pan", ampPanKnobLabelRect, Justification::centred, 1);
 		g.drawFittedText("Volume", ampVolumeKnobLabelRect, Justification::centred, 1);
 
@@ -99,6 +106,8 @@ public:
 	}
 
 private:
+
+	VisualEnvelopeComponent visualEnvelopeComponent;
 
 	// Functions
 
@@ -132,25 +141,29 @@ private:
 		envelopeRect = juce::Rectangle<int>(
 			filterRect.getX(),
 			filterRect.getY() + filterRect.getHeight(),
-			localBounds.getWidth() * 2 / 3,
+			localBounds.getWidth() / 2,
 			filterRect.getHeight());
 
-		ampRect = juce::Rectangle<int>(
+		visualEnvelopeRect = juce::Rectangle<int>(
 			envelopeRect.getX() + envelopeRect.getWidth(),
 			envelopeRect.getY(),
-			localBounds.getWidth() * 1 / 3,
+			localBounds.getWidth() / 4,
 			envelopeRect.getHeight());
+
+		ampRect = juce::Rectangle<int>(
+			visualEnvelopeRect.getX() + visualEnvelopeRect.getWidth(),
+			visualEnvelopeRect.getY(),
+			localBounds.getWidth() / 4,
+			visualEnvelopeRect.getHeight());
 
 		//****************************Filter Section******************************
 
 
-		
 		//****************************LFO Section******************************
 
 
-		
 		//****************************Envelope Section******************************
-		
+
 		// envelopeTitleRect = juce::Rectangle<int>(
 		// 	envelopeRect.getX(),
 		// 	envelopeRect.getY(),
@@ -237,7 +250,6 @@ private:
 			ampPanKnobLabelRect.getY(),
 			ampPanKnobLabelRect.getWidth(),
 			labelHeight);
-
 	}
 
 	void defineComponents() override
@@ -259,45 +271,55 @@ private:
 		//****************************Filter Section******************************
 
 
-
 		//****************************LFO Section******************************
 
+
+		//****************************Visual Envelope Section******************************
+
+		visualEnvelopeComponent.setSize(visualEnvelopeRect.getWidth(), visualEnvelopeRect.getHeight());
+		visualEnvelopeComponent.build();
+		visualEnvelopeComponent.setBounds(visualEnvelopeRect);
+		addAndMakeVisible(&visualEnvelopeComponent);
 
 
 		//****************************Envelope Section******************************
 
 		envelopeAttackKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
-		envelopeAttackKnob.setRange(processor.zeroToTenMinValue, processor.zeroToTenMaxValue, processor.zeroToTenStepValue);
+		envelopeAttackKnob.setRange(processor.zeroToTenMinValue, processor.zeroToTenMaxValue,
+		                            processor.zeroToTenStepValue);
 		envelopeAttackKnob.setTextBoxStyle(Slider::NoTextBox, false, 100, 30);
 		envelopeAttackKnob.setBounds(envelopeAttackKnobRect);
-		envelopeAttackKnob.setSkewFactorFromMidPoint(processor.zeroToTenMidpointValue);
+		// envelopeAttackKnob.setSkewFactorFromMidPoint(processor.zeroToTenMidpointValue);
 		envelopeAttackKnob.setTooltip(translate(processor.effectTooltip));
 		envelopeAttackKnob.setVisible(true);
 		envelopeAttackKnob.addListener(this);
 
 		envelopeDecayKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
-		envelopeDecayKnob.setRange(processor.zeroToTenMinValue, processor.zeroToTenMaxValue, processor.zeroToTenStepValue);
+		envelopeDecayKnob.setRange(processor.zeroToTenMinValue, processor.zeroToTenMaxValue,
+		                           processor.zeroToTenStepValue);
 		envelopeDecayKnob.setTextBoxStyle(Slider::NoTextBox, false, 100, 30);
 		envelopeDecayKnob.setBounds(envelopeDecayKnobRect);
-		envelopeDecayKnob.setSkewFactorFromMidPoint(processor.zeroToTenMidpointValue);
+		// envelopeDecayKnob.setSkewFactorFromMidPoint(processor.zeroToTenMidpointValue);
 		envelopeDecayKnob.setTooltip(translate(processor.effectTooltip));
 		envelopeDecayKnob.setVisible(true);
 		envelopeDecayKnob.addListener(this);
 
 		envelopeSustainKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
-		envelopeSustainKnob.setRange(processor.zeroToOneMinValue, processor.zeroToOneMaxValue, processor.zeroToOneStepValue);
+		envelopeSustainKnob.setRange(processor.zeroToOneMinValue, processor.zeroToOneMaxValue,
+		                             processor.zeroToOneStepValue);
 		envelopeSustainKnob.setTextBoxStyle(Slider::NoTextBox, false, 100, 30);
 		envelopeSustainKnob.setBounds(envelopeSustainKnobRect);
-		envelopeSustainKnob.setSkewFactorFromMidPoint(processor.zeroToOneMidpointValue);
+		// envelopeSustainKnob.setSkewFactorFromMidPoint(processor.zeroToOneMidpointValue);
 		envelopeSustainKnob.setTooltip(translate(processor.effectTooltip));
 		envelopeSustainKnob.setVisible(true);
 		envelopeSustainKnob.addListener(this);
 
 		envelopeReleaseKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
-		envelopeReleaseKnob.setRange(processor.zeroToTenMinValue, processor.zeroToTenMaxValue, processor.zeroToTenStepValue);
+		envelopeReleaseKnob.setRange(processor.zeroToTenMinValue, processor.zeroToTenMaxValue,
+		                             processor.zeroToTenStepValue);
 		envelopeReleaseKnob.setTextBoxStyle(Slider::NoTextBox, false, 100, 30);
 		envelopeReleaseKnob.setBounds(envelopeReleaseKnobRect);
-		envelopeReleaseKnob.setSkewFactorFromMidPoint(processor.zeroToTenMidpointValue);
+		// envelopeReleaseKnob.setSkewFactorFromMidPoint(processor.zeroToTenMidpointValue);
 		envelopeReleaseKnob.setTooltip(translate(processor.effectTooltip));
 		envelopeReleaseKnob.setVisible(true);
 		envelopeReleaseKnob.addListener(this);
@@ -321,7 +343,6 @@ private:
 		ampVolumeKnob.setTooltip(translate(processor.effectTooltip));
 		ampVolumeKnob.setVisible(true);
 		ampVolumeKnob.addListener(this);
-
 	}
 
 	void addComponents() override
@@ -347,6 +368,7 @@ private:
 	juce::Rectangle<int> filterRect;
 	juce::Rectangle<int> lfoRect;
 	juce::Rectangle<int> envelopeRect;
+	juce::Rectangle<int> visualEnvelopeRect;
 	juce::Rectangle<int> ampRect;
 	// Filter Section
 	juce::Rectangle<int> filterTitleRect;

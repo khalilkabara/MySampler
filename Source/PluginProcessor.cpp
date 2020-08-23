@@ -210,7 +210,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	MidiMessage midiMessage;
 	MidiBuffer::Iterator midiIterator{midiMessages};
-	int sample{0};
+	auto sample{0};
 
 	while (midiIterator.getNextEvent(midiMessage, sample))
 	{
@@ -218,7 +218,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 		else if (midiMessage.isNoteOff())
 		{
 			mIsNotePlayed = false;
-			lastPlaybackPosition = 0;
+			if (restartOnKeyUp)lastPlaybackPosition = 0;
 		}
 	}
 

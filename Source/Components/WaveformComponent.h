@@ -35,10 +35,10 @@ public:
 
 	void paint(Graphics& g) override
 	{
+		// if (!editorHasBeenInitialized) { mPaint(g, waveformSectionImage); editorHasBeenInitialized = true; }
 		mPaint(g, waveformSectionImage);
-
-		if (debugBoundRects)
-			g.drawRect(getLocalBounds());
+		
+		if (debugBoundRects) g.drawRect(getLocalBounds());
 
 		if (processor.noFileLoadedYet)
 		{
@@ -57,12 +57,9 @@ public:
 			                       5);
 		}
 
-		if (newFileLoaded)
-		{
-			drawWaveform(g);
-			processor.newFileLoaded = false;
-			// processor.clearLoadedWaveform();
-		}
+		drawWaveform(g);
+		
+		drawPlayhead(g);
 	}
 
 	void resized() override
@@ -94,11 +91,15 @@ public:
 	}
 
 private:
-	
+
+	Image waveformSectionImage;
+
+	int currentPlayheadPosition{0};
+	const int playheadLineThickness{2};
+	int samplesBoundsRatio;
 	const int fps = 10;
 	Array<float> channelData;
 	bool fileIsBeingDragged = false;
-	bool newFileLoaded;
 
 	juce::Rectangle<int> fileDragIndicatorRect;
 
@@ -121,22 +122,27 @@ private:
 
 	void timerCallback() override
 	{
-		newFileLoaded = processor.newFileLoaded;
-		if (newFileLoaded) repaint();
+		if(processor.newFileLoaded)
+		{
+			repaint();
+			processor.newFileLoaded = false;
+			return;
+		}
+		currentPlayheadPosition = processor.lastPlaybackPosition;
+		repaint();
 	}
 
 	void drawWaveform(Graphics& g)
 	{
 		if(processor.noFileLoadedYet) return;
 		
-		const auto waveform = processor.getLoadedFileWaveform();
-		auto ratio = waveform.getNumSamples() / localBounds.getWidth();
+		samplesBoundsRatio = processor.getLoadedFileWaveform().getNumSamples() / localBounds.getWidth();
 
 		const float* buffer = processor.loadedFileWaveform.getReadPointer(0);
 
 		channelData.clear();
 
-		for (auto sample = 0; sample + ratio < processor.loadedFileWaveform.getNumSamples(); sample += ratio)
+		for (auto sample = 0; sample + samplesBoundsRatio < processor.loadedFileWaveform.getNumSamples(); sample += samplesBoundsRatio)
 		{
 			channelData.add(buffer[sample]);
 		}
@@ -166,7 +172,6 @@ private:
 		// Check for Nan etc
 		if (path.isEmpty()) return;
 		if (path.getBounds().getWidth() < 0.01) return;
-		// if (path.getBounds().getWidth() != path.getBounds().getWidth()) return;
 
 		// Rescale
 		path.scaleToFit(localBounds.getX(),
@@ -175,29 +180,25 @@ private:
 		                0.8f * localBounds.getHeight(),
 		                false);
 
-		// Fade
-
-		// Gradient
-		// const auto colour1 = juce::Colours::blue
-		//                      .withRotatedHue(0.2f + max).withBrightness(0.5f + 0.5f * max).withSaturation(
-		// 	                     0.1f + 0.9f * max);
-		// const auto colour2 = juce::Colours::red.withMultipliedBrightness(0.5f + 0.5f * max).withSaturation(
-		// 	0.1f + 0.9f * max);
-		//
-		// const ColourGradient gradient(colour1, localBounds.getWidth() / 2, localBounds.getHeight() / 2,
-		//                               colour2, localBounds.getX(), localBounds.getHeight() / 2, false);
-		//
-		// g.setGradientFill(gradient);
-
 		g.setColour(Colours::whitesmoke);
 
 		g.strokePath(path, PathStrokeType(0.5f + max / 2));
 	}
 
-	const int labelRectHeight = 10;
+	void drawPlayhead(Graphics& g) const
+	{
+		g.setColour(Colours::red);
 
-	// Binary Data
-	Image waveformSectionImage;
+		const auto xPos = currentPlayheadPosition / samplesBoundsRatio;
+
+		const Line<float> line{
+			static_cast<float>(xPos),
+			static_cast<float>(localBounds.getY()),
+			static_cast<float>(xPos + playheadLineThickness),
+			static_cast<float>(localBounds.getY() + localBounds.getHeight())};
+		
+		g.drawLine(line);
+	}
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformComponent)
 };
