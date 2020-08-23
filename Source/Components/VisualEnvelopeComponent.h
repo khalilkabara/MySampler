@@ -56,15 +56,6 @@ private:
 	void defineComponents() override
 	{
 		MyComponentBase::defineComponents();
-
-		// minAttackPos = localBounds.getX();
-		// maxAttackPos = localBounds.getX() + localBounds.getWidth() / 4;
-		// minDecayPos = localBounds.getX() + localBounds.getWidth() / 4;
-		// maxDecayPos = localBounds.getX() + localBounds.getWidth() / 2;
-		// minSustainPos = localBounds.getX() + localBounds.getWidth() / 2;
-		// maxSustainPos = localBounds.getX() + localBounds.getWidth() * 3 / 4;
-		// minReleasePos = localBounds.getX() + localBounds.getWidth() * 3 / 4;
-		// maxReleasePos = localBounds.getWidth();
 	}
 
 	void addComponents() override

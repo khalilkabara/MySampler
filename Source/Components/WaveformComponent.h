@@ -135,6 +135,8 @@ private:
 	void drawWaveform(Graphics& g)
 	{
 		if(processor.noFileLoadedYet) return;
+
+		// localBounds = getLocalBounds();
 		
 		samplesBoundsRatio = processor.getLoadedFileWaveform().getNumSamples() / localBounds.getWidth();
 

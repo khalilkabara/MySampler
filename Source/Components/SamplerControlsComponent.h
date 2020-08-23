@@ -118,43 +118,39 @@ private:
 	void defineRects() override
 	{
 		MyComponentBase::defineRects();
-
+		localBounds = getLocalBounds();
+		
 		// Main Rects
-		localBounds = juce::Rectangle<int>(
-			getLocalBounds().getX() + border,
-			getLocalBounds().getY() + border,
-			getLocalBounds().getWidth() - 2 * border,
-			getLocalBounds().getHeight() - 2 * border);
-
-		filterRect = juce::Rectangle<int>(
+		
+		visualEnvelopeRect = juce::Rectangle<int>(
 			localBounds.getX(),
 			localBounds.getY(),
-			localBounds.getWidth() / 2,
+			localBounds.getWidth() * 2 / 5,
+			localBounds.getHeight() / 2);
+
+		envelopeRect = juce::Rectangle<int>(
+			visualEnvelopeRect.getX(),
+			visualEnvelopeRect.getY() + visualEnvelopeRect.getHeight(),
+			visualEnvelopeRect.getWidth(),
+			visualEnvelopeRect.getHeight());
+
+		filterRect = juce::Rectangle<int>(
+			visualEnvelopeRect.getX() + visualEnvelopeRect.getWidth(),
+			localBounds.getY(),
+			localBounds.getWidth() * 2 / 5,
 			localBounds.getHeight() / 2);
 
 		lfoRect = juce::Rectangle<int>(
-			filterRect.getX() + filterRect.getWidth(),
-			filterRect.getY(),
+			filterRect.getX(),
+			filterRect.getY() + filterRect.getHeight(),
 			filterRect.getWidth(),
 			filterRect.getHeight());
 
-		envelopeRect = juce::Rectangle<int>(
-			filterRect.getX(),
-			filterRect.getY() + filterRect.getHeight(),
-			localBounds.getWidth() / 2,
-			filterRect.getHeight());
-
-		visualEnvelopeRect = juce::Rectangle<int>(
-			envelopeRect.getX() + envelopeRect.getWidth(),
-			envelopeRect.getY(),
-			localBounds.getWidth() / 4,
-			envelopeRect.getHeight());
-
 		ampRect = juce::Rectangle<int>(
-			visualEnvelopeRect.getX() + visualEnvelopeRect.getWidth(),
-			visualEnvelopeRect.getY(),
-			localBounds.getWidth() / 4,
-			visualEnvelopeRect.getHeight());
+			filterRect.getX() + filterRect.getWidth(),
+			filterRect.getY(),
+			localBounds.getWidth() * 1 / 5,
+			localBounds.getHeight());
 
 		//****************************Filter Section******************************
 

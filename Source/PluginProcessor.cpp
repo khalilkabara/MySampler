@@ -208,25 +208,28 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	midiKeyboardState.processNextMidiBuffer(midiMessages, 0, buffer.getNumSamples(), true);
 	ScopedNoDenormals noDenormals;
 
+	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
 	MidiMessage midiMessage;
 	MidiBuffer::Iterator midiIterator{midiMessages};
 	auto sample{0};
-
+	
 	while (midiIterator.getNextEvent(midiMessage, sample))
 	{
 		if (midiMessage.isNoteOn()) mIsNotePlayed = true;
 		else if (midiMessage.isNoteOff())
 		{
 			mIsNotePlayed = false;
-			if (restartOnKeyUp)lastPlaybackPosition = 0;
+			// if (restartOnKeyUp)lastPlaybackPosition = 0;
+			lastPlaybackPosition = 0;
 		}
 	}
-
+	
 	HeaderComponent::displayText = static_cast<String>(lastPlaybackPosition);
-
+	
 	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
 	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
-
+	
 	if (mIsNotePlayed)
 	{
 		for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
@@ -237,15 +240,26 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 			                channel % loadedFileWaveform.getNumChannels(),
 			                lastPlaybackPosition,
 			                samplesThisTime);
+			
 		}
-
+	
 		lastPlaybackPosition += samplesThisTime;
-
+	
 		if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
 			lastPlaybackPosition = 0;
 	}
 
+	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+	// for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
+	// {
+	// 	buffer.clear(i, 0, buffer.getNumSamples());
+	// }
+	//
 	// mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+
+	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
 	processEffects(buffer, dsp::ProcessContextReplacing<float>(block));
 
 	// Samples for Oscilloscope
