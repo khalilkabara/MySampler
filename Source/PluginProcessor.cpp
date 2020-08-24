@@ -19,7 +19,7 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 #endif
 		  .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-	  ), valueTreeState(*this, nullptr)
+	  ), valueTreeState(*this, &undoManager)
 #endif
 {
 	createStateTrees();
@@ -213,7 +213,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	MidiMessage midiMessage;
 	MidiBuffer::Iterator midiIterator{midiMessages};
 	auto samplePos{0};
-	
+
 	while (midiIterator.getNextEvent(midiMessage, samplePos))
 	{
 		if (midiMessage.isNoteOn()) mIsNotePlayed = true;
@@ -224,25 +224,24 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 			lastPlaybackPosition = 0;
 		}
 	}
-	
+
 	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
 	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
-	
+
 	if (mIsNotePlayed)
 	{
 		for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
 		{
 			buffer.addFrom(channel,
-			                0,
-			                loadedFileWaveform,
-			                channel % loadedFileWaveform.getNumChannels(),
-			                lastPlaybackPosition,
-			                samplesThisTime);
-			
+			               0,
+			               loadedFileWaveform,
+			               channel % loadedFileWaveform.getNumChannels(),
+			               lastPlaybackPosition,
+			               samplesThisTime);
 		}
-	
+
 		lastPlaybackPosition += samplesThisTime;
-	
+
 		if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
 			lastPlaybackPosition = 0;
 	}
@@ -253,7 +252,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	{
 		buffer.clear(i, 0, buffer.getNumSamples());
 	}
-	
+
 	mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -345,6 +344,11 @@ void MySamplerAudioProcessor::initializeEffects(dsp::ProcessSpec& spec)
 
 	ampEnvelope.reset();
 	ampEnvelope.setSampleRate(lastSampleRate);
+
+	filter.reset();
+	filter.prepare(spec);
+
+	// lfo.reset();
 }
 
 void MySamplerAudioProcessor::updateEffects()
@@ -365,12 +369,22 @@ void MySamplerAudioProcessor::updateEffects()
 			sound->setEnvelopeParameters(ampEnvelopeParams);
 		}
 	}
+
+	const auto filterType = static_cast<int>(*valueTreeState.getRawParameterValue(filterTypeStateName));
+	if (filterType == FILTER_TYPES.indexOf(FILTER_LOW_PASS))filter.setType(dsp::StateVariableTPTFilterType::lowpass);
+	if (filterType == FILTER_TYPES.indexOf(FILTER_HIGH_PASS))filter.setType(dsp::StateVariableTPTFilterType::highpass);
+	if (filterType == FILTER_TYPES.indexOf(FILTER_BAND_PASS))filter.setType(dsp::StateVariableTPTFilterType::bandpass);
+
+	filter.setCutoffFrequency(static_cast<float>(*valueTreeState.getRawParameterValue(filterCutoffStateName)));
+	filter.setResonance(static_cast<float>(*valueTreeState.getRawParameterValue(filterResonanceStateName)));
 }
 
 void MySamplerAudioProcessor::processEffects(AudioBuffer<float>& buffer, dsp::ProcessContextReplacing<float> dspContext)
 {
 	updateEffects();
-	// ampEnvelope.applyEnvelopeToBuffer(buffer, 0, buffer.getNumSamples());
+
+	filter.process(dspContext);
+	
 	ampPan.process(dspContext);
 
 	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
@@ -431,6 +445,25 @@ void MySamplerAudioProcessor::createStateTrees()
 	                                                                 envelopeReleaseStateName,
 	                                                                 envelopeParamRange,
 	                                                                 zeroToTenDefaultValue,
+	                                                                 nullptr, nullptr));
+
+	// Filter
+	NormalisableRange<float> filterTypeParam(0, FILTER_TYPES.size() - 1);
+	NormalisableRange<float> filterCutoffParam(filterCutoffMinValue, filterCutoffMaxValue);
+	NormalisableRange<float> filterResonanceParam(filterResonanceMinValue, filterResonanceMaxValue);
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(filterTypeStateName, filterTypeStateName,
+	                                                                 filterTypeStateName, filterTypeParam, 0,
+	                                                                 nullptr, nullptr));
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(filterCutoffStateName, filterCutoffStateName,
+	                                                                 filterCutoffStateName, filterCutoffParam,
+	                                                                 filterCutoffMidpoint, nullptr, nullptr));
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(filterResonanceStateName,
+	                                                                 filterResonanceStateName,
+	                                                                 filterResonanceStateName, filterResonanceParam,
+	                                                                 filterResonanceDefaultValue,
 	                                                                 nullptr, nullptr));
 }
 

@@ -57,7 +57,7 @@ public:
 	Array<float> rightBufferHistory;
 	int bufferHistoryLength = 160;
 	const int bufferHistoryUpdateFrequency = 50;
-	
+
 	const int uiMargin = 2.5;
 
 	// Classes
@@ -66,7 +66,7 @@ public:
 	const juce::Font myFontTiny = juce::Font(10, juce::Font::FontStyleFlags::plain);
 	const juce::Font headerDisplayFont = juce::Font(15, juce::Font::FontStyleFlags::plain);
 	const String SAVED_PARAMS_NAME{"mySamplerSavedParams"};
-	
+
 	MidiKeyboardState midiKeyboardState;
 	AudioProcessorValueTreeState valueTreeState;
 
@@ -74,9 +74,9 @@ public:
 	String currentlyLoadedFilePath = "";
 	const String lastLoadedFilePathParamName = "lastLoadedFilePath";
 	AudioFormatManager audioFormatManager;
-	AudioFormatReader* audioFormatReader{ nullptr };
+	AudioFormatReader* audioFormatReader{nullptr};
 	AudioBuffer<float> loadedFileWaveform;
-	
+
 	AudioBuffer<float>& getLoadedFileWaveform() { return loadedFileWaveform; }
 	void clearLoadedWaveform() { loadedFileWaveform.clear(); }
 
@@ -97,11 +97,16 @@ public:
 	const String effectTooltip = "effect;";
 	const String bipolarTooltip = "bipolar;";
 	const String bipolarEffectTooltip = "bipolarEffect;";
-	
+
 	const String envelopeAttackStateName = "envelopeAttack";
 	const String envelopeDecayStateName = "envelopeDecay";
 	const String envelopeSustainStateName = "envelopeSustain";
 	const String envelopeReleaseStateName = "envelopeRelease";
+
+	const String filterTypeStateName = "filterType";
+	const String filterCutoffStateName = "filterCutoff";
+	const String filterResonanceStateName = "filterResonance";
+
 	const String ampVolumeStateName = "ampVolume";
 	const String ampPanStateName = "ampPan";
 
@@ -110,13 +115,13 @@ public:
 	const float zeroToTenDefaultValue = 0.1;
 	const float zeroToTenMidpointValue = 3.0;
 	const float zeroToTenStepValue = 0.1;
-	
+
 	const float zeroToOneMinValue = 0.0;
 	const float zeroToOneMaxValue = 1.0;
 	const float zeroToOneDefaultValue = 0.8;
 	const float zeroToOneMidpointValue = 0.3;
 	const float zeroToOneStepValue = 0.01;
-	
+
 	const float bipolarMinValue = -1.0;
 	const float bipolarMaxValue = 1.0;
 	const float bipolarDefaultValue = 0.0;
@@ -129,24 +134,42 @@ public:
 	const float panMidpointValue = 0.0;
 	const float panStepValue = 0.01;
 
+	const String FILTER_LOW_PASS = "Low Pass";
+	const String FILTER_HIGH_PASS = "High Pass";
+	const String FILTER_BAND_PASS = "Band Pass";
+	Array<String> FILTER_TYPES{FILTER_LOW_PASS, FILTER_HIGH_PASS, FILTER_BAND_PASS};
+
+	const float filterCutoffMinValue = 20;
+	const float filterCutoffMaxValue = 20000;
+	const float filterCutoffDefaultValue = 500;
+	const float filterCutoffMidpoint = 2500;
+	const float filterCutoffStep = 0.1;
+
+	const float filterResonanceMinValue = 0.1;
+	const float filterResonanceMaxValue = 10;
+	const float filterResonanceDefaultValue = 0.2;
+	const float filterResonanceMidpoint = 4;
+	const float filterResonanceStep = 0.01;
+
 	void loadFile();
 	void loadFile(File file);
 	void loadFile(String& filePath);
 
 private:
 
-	UndoManager undoManager{ 30000, 30 };
+	UndoManager undoManager{30000, 30};
 
 	dsp::ProcessSpec spec;
 	ADSR ampEnvelope;
 	ADSR::Parameters ampEnvelopeParams;
-	// ADSR::Parameters samplerEnvelopeParams;
 	juce::dsp::Panner<float> ampPan;
+	juce::dsp::StateVariableTPTFilter<float> filter;
+	// juce::dsp::Oscillator<float> lfo;
 	Synthesiser mSampler;
 
 	float ampVolume = 0.8;
-	const int numVoices{ 3 };
-	const int midiNoteForC3{ 60 };
+	const int numVoices{1};
+	const int midiNoteForC3{60};
 	const String loadedSampleName = "Sample";
 	const String allowedFileFormats = String();
 	// const String allowedFileFormats = "*.wav,*.flac,*.aiff,*.mp3,*.aac,*.ogg";
@@ -165,7 +188,7 @@ private:
 	void initializeEffects(dsp::ProcessSpec&);
 	void updateEffects();
 	void processEffects(AudioBuffer<float>& buffer, dsp::ProcessContextReplacing<float>);
-	
+
 	//==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MySamplerAudioProcessor)
 };

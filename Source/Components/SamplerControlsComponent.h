@@ -18,7 +18,8 @@
 //==============================================================================
 
 class SamplerControlsComponent : public MyComponentBase,
-                                 public Slider::Listener,
+                                 private Slider::Listener,
+                                 private ComboBox::Listener,
                                  public Button::Listener
 
 {
@@ -29,34 +30,38 @@ public:
 	{
 		// controlsSectionImage = ImageCache::getFromMemory(BinaryData::reverb_section_art_png,
 		//                                                BinaryData::reverb_section_art_pngSize);
-		
-		envelopeAttackAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                  processor.
-		                                                                                  envelopeAttackStateName,
-		                                                                                  envelopeAttackKnob));
 
-		envelopeDecayAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                 processor.
-		                                                                                 envelopeDecayStateName,
-		                                                                                 envelopeDecayKnob));
+		// Filter
+		filterTypeAttachment.reset(new AudioProcessorValueTreeState::ComboBoxAttachment(
+			processor.valueTreeState, processor.filterTypeStateName, filterTypeSelector));
 
-		envelopeSustainAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                   processor.
-		                                                                                   envelopeSustainStateName,
-		                                                                                   envelopeSustainKnob));
+		filterCutoffAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.filterCutoffStateName, filterCutoffKnob));
 
-		envelopeReleaseAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                                   processor.
-		                                                                                   envelopeReleaseStateName,
-		                                                                                   envelopeReleaseKnob));
+		filterResonanceAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.filterResonanceStateName, filterResonanceKnob));
 
-		ampPanAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                          processor.ampPanStateName,
-		                                                                          ampPanKnob));
+		// Settings
 
-		ampVolumeAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(processor.valueTreeState,
-		                                                                             processor.ampVolumeStateName,
-		                                                                             ampVolumeKnob));
+		// Envelope
+		envelopeAttackAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.envelopeAttackStateName, envelopeAttackKnob));
+
+		envelopeDecayAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.envelopeDecayStateName, envelopeDecayKnob));
+
+		envelopeSustainAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.envelopeSustainStateName, envelopeSustainKnob));
+
+		envelopeReleaseAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.envelopeReleaseStateName, envelopeReleaseKnob));
+
+		// Amp
+		ampPanAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.ampPanStateName, ampPanKnob));
+
+		ampVolumeAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.ampVolumeStateName, ampVolumeKnob));
 	}
 
 	~SamplerControlsComponent()
@@ -72,7 +77,9 @@ public:
 		g.setFont(processor.myFontTiny);
 
 		g.drawFittedText("Filter", filterTitleRect, Justification::centred, 1);
-		g.drawFittedText("LFO", LfoTitleRect, Justification::centred, 1);
+		g.drawFittedText("Type", filterTypeLabelRect, Justification::centred, 1);
+		g.drawFittedText("Cutoff", filterCutoffKnobLabelRect, Justification::centred, 1);
+		g.drawFittedText("Resonance", filterResonanceKnobLabelRect, Justification::centred, 1);
 
 		g.drawFittedText("Envelope", envelopeTitleRect, Justification::centred, 1);
 		g.drawFittedText("Attack", envelopeAttackKnobLabelRect, Justification::centred, 1);
@@ -87,7 +94,14 @@ public:
 		{
 			// g.drawRect(visualEnvelopeRect);
 			g.drawRect(filterRect);
-			g.drawRect(lfoRect);
+			g.drawRect(filterTitleRect);
+			g.drawRect(filterTypeLabelRect);
+			g.drawRect(filterTypeRect);
+			g.drawRect(filterCutoffKnobRect);
+			g.drawRect(filterCutoffKnobLabelRect);
+			g.drawRect(filterResonanceKnobLabelRect);
+
+			g.drawRect(settingsRect);
 			g.drawRect(envelopeRect);
 			g.drawRect(ampRect);
 		}
@@ -115,17 +129,21 @@ private:
 	{
 	}
 
+	void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override
+	{
+	}
+
 	void defineRects() override
 	{
 		MyComponentBase::defineRects();
 		localBounds = getLocalBounds();
-		
+
 		// Main Rects
-		
+
 		visualEnvelopeRect = juce::Rectangle<int>(
 			localBounds.getX() + border,
 			localBounds.getY() + border,
-			localBounds.getWidth() * 2 / 5 - (2*border),
+			localBounds.getWidth() * 2 / 5 - (2 * border),
 			localBounds.getHeight() / 2 - border);
 
 		envelopeRect = juce::Rectangle<int>(
@@ -134,28 +152,69 @@ private:
 			visualEnvelopeRect.getWidth(),
 			visualEnvelopeRect.getHeight() - border);
 
-		filterRect = juce::Rectangle<int>(
+		settingsRect = juce::Rectangle<int>(
 			visualEnvelopeRect.getX() + visualEnvelopeRect.getWidth() + border,
 			localBounds.getY() + border,
 			localBounds.getWidth() * 2 / 5 - (2 * border),
-			localBounds.getHeight() / 2 - (border));
+			localBounds.getHeight() / 3 - border);
 
-		lfoRect = juce::Rectangle<int>(
-			filterRect.getX(),
-			filterRect.getY() + filterRect.getHeight() + border,
-			filterRect.getWidth(),
-			filterRect.getHeight() - border);
+		filterRect = juce::Rectangle<int>(
+			settingsRect.getX(),
+			settingsRect.getY() + settingsRect.getHeight() + border,
+			settingsRect.getWidth(),
+			(localBounds.getHeight() * 2 / 3) - 2 * border);
 
 		ampRect = juce::Rectangle<int>(
-			filterRect.getX() + filterRect.getWidth() + border,
-			filterRect.getY(),
-			localBounds.getWidth() * 1 / 5 - (border),
+			settingsRect.getX() + settingsRect.getWidth() + border,
+			settingsRect.getY(),
+			localBounds.getWidth() * 1 / 5,
 			localBounds.getHeight() - 2 * border);
 
 		//****************************Filter Section******************************
 
+		filterTitleRect = juce::Rectangle<int>(
+			filterRect.getX(),
+			filterRect.getY(),
+			filterRect.getWidth() / 4,
+			filterRect.getHeight());
 
-		//****************************LFO Section******************************
+		filterTypeLabelRect = juce::Rectangle<int>(
+			filterTitleRect.getX() + filterTitleRect.getWidth(),
+			filterTitleRect.getY(),
+			(filterRect.getWidth() - filterTitleRect.getWidth()) / 3,
+			labelHeight * 2);
+
+		filterTypeRect = juce::Rectangle<int>(
+			filterTypeLabelRect.getX() + filterTypeLabelRect.getWidth(),
+			filterTypeLabelRect.getY(),
+			(filterRect.getWidth() - filterTitleRect.getWidth()) * 2 / 3,
+			filterTypeLabelRect.getHeight());
+
+		filterCutoffKnobRect = juce::Rectangle<int>(
+			filterTypeLabelRect.getX(),
+			filterTypeLabelRect.getY() + filterTypeLabelRect.getHeight(),
+			(filterRect.getWidth() - filterTitleRect.getWidth()) / 2,
+			filterRect.getHeight() - filterTypeLabelRect.getHeight() - labelHeight);
+
+		filterCutoffKnobLabelRect = juce::Rectangle<int>(
+			filterCutoffKnobRect.getX(),
+			filterCutoffKnobRect.getY() + filterCutoffKnobRect.getHeight(),
+			filterCutoffKnobRect.getWidth(),
+			labelHeight);
+
+		filterResonanceKnobRect = juce::Rectangle<int>(
+			filterCutoffKnobRect.getX() + filterCutoffKnobRect.getWidth(),
+			filterCutoffKnobRect.getY(),
+			filterCutoffKnobRect.getWidth(),
+			filterCutoffKnobRect.getHeight());
+
+		filterResonanceKnobLabelRect = juce::Rectangle<int>(
+			filterResonanceKnobRect.getX(),
+			filterResonanceKnobRect.getY() + filterResonanceKnobRect.getHeight(),
+			filterResonanceKnobRect.getWidth(),
+			labelHeight);
+
+		//****************************Settings Section******************************
 
 
 		//****************************Envelope Section******************************
@@ -266,8 +325,37 @@ private:
 
 		//****************************Filter Section******************************
 
+		filterTypeSelector.addItemList(processor.FILTER_TYPES, 1);
+		const auto selectedTypeIndex = static_cast<int>(*processor.valueTreeState.getRawParameterValue(
+			processor.filterTypeStateName));
+		filterTypeSelector.setText(processor.FILTER_TYPES[selectedTypeIndex]);
+		filterTypeSelector.setVisible(true);
+		filterTypeSelector.setEnabled(true);
+		filterTypeSelector.setBounds(filterTypeRect);
+		filterTypeSelector.addListener(this);
 
-		//****************************LFO Section******************************
+		filterCutoffKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
+		filterCutoffKnob.setRange(processor.filterCutoffMinValue, processor.filterCutoffMaxValue,
+		                          processor.filterCutoffStep);
+		filterCutoffKnob.setTextBoxStyle(Slider::NoTextBox, false, 30, 10);
+		filterCutoffKnob.setBounds(filterCutoffKnobRect);
+		filterCutoffKnob.setSkewFactorFromMidPoint(processor.filterCutoffMidpoint);
+		filterCutoffKnob.setTooltip(translate(processor.effectTooltip));
+		filterCutoffKnob.setVisible(true);
+		filterCutoffKnob.addListener(this);
+
+		filterResonanceKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
+		filterResonanceKnob.setRange(processor.filterResonanceMinValue, processor.filterResonanceMaxValue,
+		                             processor.filterResonanceStep);
+		filterResonanceKnob.setTextBoxStyle(Slider::NoTextBox, false, 30, 10);
+		filterResonanceKnob.setBounds(filterResonanceKnobRect);
+		filterResonanceKnob.setSkewFactorFromMidPoint(processor.filterResonanceMidpoint);
+		filterResonanceKnob.setTooltip(translate(processor.effectTooltip));
+		filterResonanceKnob.setVisible(true);
+		filterResonanceKnob.addListener(this);
+
+
+		//****************************Settings Section******************************
 
 
 		//****************************Visual Envelope Section******************************
@@ -323,7 +411,7 @@ private:
 
 		ampPanKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
 		ampPanKnob.setRange(processor.bipolarMinValue, processor.bipolarMaxValue, processor.bipolarStepValue);
-		ampPanKnob.setTextBoxStyle(Slider::NoTextBox, false, 100, 30);
+		ampPanKnob.setTextBoxStyle(Slider::NoTextBox, false, 30, 10);
 		ampPanKnob.setBounds(ampPanKnobRect);
 		ampPanKnob.setSkewFactorFromMidPoint(processor.bipolarMidpointValue);
 		ampPanKnob.setTooltip(translate(processor.bipolarEffectTooltip));
@@ -332,7 +420,7 @@ private:
 
 		ampVolumeKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
 		ampVolumeKnob.setRange(processor.zeroToOneMinValue, processor.zeroToOneMaxValue, processor.zeroToOneStepValue);
-		ampVolumeKnob.setTextBoxStyle(Slider::NoTextBox, false, 100, 30);
+		ampVolumeKnob.setTextBoxStyle(Slider::NoTextBox, false, 30, 10);
 		ampVolumeKnob.setBounds(ampVolumeKnobRect);
 		ampVolumeKnob.setSkewFactorFromMidPoint(processor.zeroToOneMidpointValue);
 		ampVolumeKnob.setTooltip(translate(processor.effectTooltip));
@@ -342,6 +430,10 @@ private:
 
 	void addComponents() override
 	{
+		addAndMakeVisible(filterTypeSelector);
+		addAndMakeVisible(filterCutoffKnob);
+		addAndMakeVisible(filterResonanceKnob);
+		
 		addAndMakeVisible(envelopeAttackKnob);
 		addAndMakeVisible(envelopeDecayKnob);
 		addAndMakeVisible(envelopeSustainKnob);
@@ -352,7 +444,7 @@ private:
 	}
 
 	const int border = 5;
-	const int labelHeight = 7;
+	const int labelHeight{10};
 
 	// Binary Data
 	Image controlsSectionImage;
@@ -361,14 +453,20 @@ private:
 
 	//Rects - Main
 	juce::Rectangle<int> filterRect;
-	juce::Rectangle<int> lfoRect;
+	juce::Rectangle<int> settingsRect;
 	juce::Rectangle<int> envelopeRect;
 	juce::Rectangle<int> visualEnvelopeRect;
 	juce::Rectangle<int> ampRect;
 	// Filter Section
 	juce::Rectangle<int> filterTitleRect;
-	// LFO Section
-	juce::Rectangle<int> LfoTitleRect;
+	juce::Rectangle<int> filterTypeLabelRect;
+	juce::Rectangle<int> filterTypeRect;
+	juce::Rectangle<int> filterCutoffKnobRect;
+	juce::Rectangle<int> filterCutoffKnobLabelRect;
+	juce::Rectangle<int> filterResonanceKnobRect;
+	juce::Rectangle<int> filterResonanceKnobLabelRect;
+	// Settings Section
+
 	// Envelope Section
 	juce::Rectangle<int> envelopeTitleRect;
 	juce::Rectangle<int> envelopeAttackKnobRect;
@@ -388,8 +486,10 @@ private:
 	//*************************************************************************************
 
 	// Components - Filter
-
-	// LFO
+	ComboBox filterTypeSelector;
+	Slider filterCutoffKnob;
+	Slider filterResonanceKnob;
+	// Settings
 
 	// Envelope
 	Slider envelopeAttackKnob;
@@ -401,6 +501,14 @@ private:
 	Slider ampVolumeKnob;
 
 	//**************************************Attachments***********************************************
+
+	//Filter
+	std::unique_ptr<AudioProcessorValueTreeState::ComboBoxAttachment> filterTypeAttachment;
+	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> filterCutoffAttachment;
+	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> filterResonanceAttachment;
+
+	// Settings
+
 
 	// Envelope
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> envelopeAttackAttachment;
