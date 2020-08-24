@@ -85,11 +85,11 @@ public:
 
 		if (debugBoundRects)
 		{
-			// g.drawRect(getLocalBounds());
-			// g.drawRect(filterRect);
-			// g.drawRect(lfoRect);
-			// g.drawRect(envelopeRect);
-			// g.drawRect(ampRect);
+			// g.drawRect(visualEnvelopeRect);
+			g.drawRect(filterRect);
+			g.drawRect(lfoRect);
+			g.drawRect(envelopeRect);
+			g.drawRect(ampRect);
 		}
 	}
 
@@ -123,34 +123,34 @@ private:
 		// Main Rects
 		
 		visualEnvelopeRect = juce::Rectangle<int>(
-			localBounds.getX(),
-			localBounds.getY(),
-			localBounds.getWidth() * 2 / 5,
-			localBounds.getHeight() / 2);
+			localBounds.getX() + border,
+			localBounds.getY() + border,
+			localBounds.getWidth() * 2 / 5 - (2*border),
+			localBounds.getHeight() / 2 - border);
 
 		envelopeRect = juce::Rectangle<int>(
 			visualEnvelopeRect.getX(),
-			visualEnvelopeRect.getY() + visualEnvelopeRect.getHeight(),
+			visualEnvelopeRect.getY() + visualEnvelopeRect.getHeight() + border,
 			visualEnvelopeRect.getWidth(),
-			visualEnvelopeRect.getHeight());
+			visualEnvelopeRect.getHeight() - border);
 
 		filterRect = juce::Rectangle<int>(
-			visualEnvelopeRect.getX() + visualEnvelopeRect.getWidth(),
-			localBounds.getY(),
-			localBounds.getWidth() * 2 / 5,
-			localBounds.getHeight() / 2);
+			visualEnvelopeRect.getX() + visualEnvelopeRect.getWidth() + border,
+			localBounds.getY() + border,
+			localBounds.getWidth() * 2 / 5 - (2 * border),
+			localBounds.getHeight() / 2 - (border));
 
 		lfoRect = juce::Rectangle<int>(
 			filterRect.getX(),
-			filterRect.getY() + filterRect.getHeight(),
+			filterRect.getY() + filterRect.getHeight() + border,
 			filterRect.getWidth(),
-			filterRect.getHeight());
+			filterRect.getHeight() - border);
 
 		ampRect = juce::Rectangle<int>(
-			filterRect.getX() + filterRect.getWidth(),
+			filterRect.getX() + filterRect.getWidth() + border,
 			filterRect.getY(),
-			localBounds.getWidth() * 1 / 5,
-			localBounds.getHeight());
+			localBounds.getWidth() * 1 / 5 - (border),
+			localBounds.getHeight() - 2 * border);
 
 		//****************************Filter Section******************************
 
@@ -225,8 +225,8 @@ private:
 		ampPanKnobRect = juce::Rectangle<int>(
 			ampRect.getX(),
 			ampRect.getY(),
-			ampRect.getWidth() / 2,
-			ampRect.getHeight() - labelHeight);
+			ampRect.getWidth(),
+			ampRect.getHeight() / 2 - labelHeight);
 
 		ampPanKnobLabelRect = juce::Rectangle<int>(
 			ampPanKnobRect.getX(),
@@ -236,15 +236,15 @@ private:
 
 		// Volume
 		ampVolumeKnobRect = juce::Rectangle<int>(
-			ampPanKnobRect.getX() + ampPanKnobRect.getWidth(),
-			ampPanKnobRect.getY(),
+			ampPanKnobRect.getX(),
+			ampPanKnobLabelRect.getY() + ampPanKnobLabelRect.getHeight(),
 			ampPanKnobRect.getWidth(),
 			ampPanKnobRect.getHeight());
 
 		ampVolumeKnobLabelRect = juce::Rectangle<int>(
-			ampPanKnobLabelRect.getX() + ampPanKnobLabelRect.getWidth(),
-			ampPanKnobLabelRect.getY(),
-			ampPanKnobLabelRect.getWidth(),
+			ampVolumeKnobRect.getX(),
+			ampVolumeKnobRect.getY() + ampVolumeKnobRect.getHeight(),
+			ampVolumeKnobRect.getWidth(),
 			labelHeight);
 	}
 
@@ -276,7 +276,6 @@ private:
 		visualEnvelopeComponent.build();
 		visualEnvelopeComponent.setBounds(visualEnvelopeRect);
 		addAndMakeVisible(&visualEnvelopeComponent);
-
 
 		//****************************Envelope Section******************************
 

@@ -178,8 +178,8 @@ void MySamplerAudioProcessor::setStateInformation(const void* data, int sizeInBy
 
 			if (currentlyLoadedFilePath.isNotEmpty())
 			{
-				noFileLoadedYet = false;
-				newFileLoaded = true;
+				// noFileLoadedYet = false;
+				// newFileLoaded = true;
 				loadFile(currentlyLoadedFilePath);
 			}
 		}
@@ -212,20 +212,18 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	MidiMessage midiMessage;
 	MidiBuffer::Iterator midiIterator{midiMessages};
-	auto sample{0};
+	auto samplePos{0};
 	
-	while (midiIterator.getNextEvent(midiMessage, sample))
+	while (midiIterator.getNextEvent(midiMessage, samplePos))
 	{
 		if (midiMessage.isNoteOn()) mIsNotePlayed = true;
 		else if (midiMessage.isNoteOff())
 		{
 			mIsNotePlayed = false;
-			// if (restartOnKeyUp)lastPlaybackPosition = 0;
+			// if (restartOnKeyUp)
 			lastPlaybackPosition = 0;
 		}
 	}
-	
-	HeaderComponent::displayText = static_cast<String>(lastPlaybackPosition);
 	
 	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
 	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
@@ -234,7 +232,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	{
 		for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
 		{
-			buffer.copyFrom(channel,
+			buffer.addFrom(channel,
 			                0,
 			                loadedFileWaveform,
 			                channel % loadedFileWaveform.getNumChannels(),
@@ -251,16 +249,18 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-	// for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
-	// {
-	// 	buffer.clear(i, 0, buffer.getNumSamples());
-	// }
-	//
-	// mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+	for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
+	{
+		buffer.clear(i, 0, buffer.getNumSamples());
+	}
+	
+	mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 	processEffects(buffer, dsp::ProcessContextReplacing<float>(block));
+
+	HeaderComponent::displayText = static_cast<String>(lastPlaybackPosition);
 
 	// Samples for Oscilloscope
 	for (auto i = 0; i < buffer.getNumSamples(); ++i)
@@ -285,7 +285,6 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	const WildcardFileFilter fileFormatFilter(audioFormatManager.getWildcardForAllFormats(), {}, {});
 	if (!fileFormatFilter.isFileSuitable(file)) return;
 
-	// shutdownAudio();
 	clearLoadedWaveform();
 
 	currentlyLoadedFile = file;
@@ -295,7 +294,7 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	loadedSampleLengthSecs = loadedFileNumSamples / audioFormatReader->sampleRate;
 	if (loadedSampleLengthSecs > maxAllowedSampleLengthSecs) loadedSampleLengthSecs = maxAllowedSampleLengthSecs;
 
-	HeaderComponent::displayText = static_cast<String>(loadedFileNumSamples);
+	// HeaderComponent::displayText = static_cast<String>(loadedFileNumSamples);
 
 	loadedFileWaveform.setSize(2, static_cast<int>(loadedFileNumSamples));
 
@@ -354,8 +353,8 @@ void MySamplerAudioProcessor::updateEffects()
 	ampPan.setPan(static_cast<float>(*valueTreeState.getRawParameterValue(ampPanStateName)));
 
 	ampEnvelopeParams.attack = static_cast<float>(*valueTreeState.getRawParameterValue(envelopeAttackStateName));
-	ampEnvelopeParams.decay = static_cast<float>(*valueTreeState.getRawParameterValue(envelopeSustainStateName));
-	ampEnvelopeParams.sustain = static_cast<float>(*valueTreeState.getRawParameterValue(ampPanStateName));
+	ampEnvelopeParams.decay = static_cast<float>(*valueTreeState.getRawParameterValue(envelopeDecayStateName));
+	ampEnvelopeParams.sustain = static_cast<float>(*valueTreeState.getRawParameterValue(envelopeSustainStateName));
 	ampEnvelopeParams.release = static_cast<float>(*valueTreeState.getRawParameterValue(envelopeReleaseStateName));
 	ampEnvelope.setParameters(ampEnvelopeParams);
 
@@ -371,6 +370,7 @@ void MySamplerAudioProcessor::updateEffects()
 void MySamplerAudioProcessor::processEffects(AudioBuffer<float>& buffer, dsp::ProcessContextReplacing<float> dspContext)
 {
 	updateEffects();
+	// ampEnvelope.applyEnvelopeToBuffer(buffer, 0, buffer.getNumSamples());
 	ampPan.process(dspContext);
 
 	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)

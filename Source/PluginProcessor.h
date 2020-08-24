@@ -91,7 +91,7 @@ public:
 	float lastSampleRate;
 	bool newFileLoaded = false;
 	bool noFileLoadedYet = true;
-	bool restartOnKeyUp = true;
+	bool restartOnKeyUp = false;
 
 	const String switchTooltip = "switch;";
 	const String effectTooltip = "effect;";
@@ -140,6 +140,7 @@ private:
 	dsp::ProcessSpec spec;
 	ADSR ampEnvelope;
 	ADSR::Parameters ampEnvelopeParams;
+	// ADSR::Parameters samplerEnvelopeParams;
 	juce::dsp::Panner<float> ampPan;
 	Synthesiser mSampler;
 

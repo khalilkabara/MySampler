@@ -45,7 +45,6 @@ public:
 	{
 	}
 
-
 private:
 
 	void defineRects() override

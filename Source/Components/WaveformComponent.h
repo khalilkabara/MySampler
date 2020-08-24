@@ -21,6 +21,7 @@ class WaveformComponent : public MyComponentBase,
                           Timer
 {
 public:
+	
 	WaveformComponent(MySamplerAudioProcessor& p) : MyComponentBase(p)
 	{
 		// waveformSectionImage = ImageCache::getFromMemory(BinaryData::reverb_section_art_png,
@@ -136,8 +137,6 @@ private:
 	{
 		if(processor.noFileLoadedYet) return;
 
-		// localBounds = getLocalBounds();
-		
 		samplesBoundsRatio = processor.getLoadedFileWaveform().getNumSamples() / localBounds.getWidth();
 
 		const float* buffer = processor.loadedFileWaveform.getReadPointer(0);
@@ -185,6 +184,7 @@ private:
 		g.setColour(Colours::whitesmoke);
 
 		g.strokePath(path, PathStrokeType(0.5f + max / 2));
+
 	}
 
 	void drawPlayhead(Graphics& g) const
