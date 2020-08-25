@@ -20,6 +20,7 @@
 class SamplerControlsComponent : public MyComponentBase,
                                  private Slider::Listener,
                                  private ComboBox::Listener,
+                                 private TextEditor::Listener,
                                  public Button::Listener
 
 {
@@ -81,6 +82,8 @@ public:
 		g.drawFittedText("Cutoff", filterCutoffKnobLabelRect, Justification::centred, 1);
 		g.drawFittedText("Resonance", filterResonanceKnobLabelRect, Justification::centred, 1);
 
+		g.drawFittedText("Voices", numVoicesLabelRect, Justification::centred, 1);
+
 		g.drawFittedText("Envelope", envelopeTitleRect, Justification::centred, 1);
 		g.drawFittedText("Attack", envelopeAttackKnobLabelRect, Justification::centred, 1);
 		g.drawFittedText("Decay", envelopeDecayKnobLabelRect, Justification::centred, 1);
@@ -131,6 +134,19 @@ private:
 
 	void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override
 	{
+	}
+
+	void textEditorTextChanged(TextEditor& textEditor) override
+	{
+		// if(textEditor == numVoicesInputBox)
+		// {
+
+		const auto numVoicesString = textEditor.getText();
+		// auto cp = numVoicesString.getCharPointer();
+		// const auto numV = juce::CharacterFunctions::readDoubleValue(cp);
+		processor.resetNumVoices(processor.stringToInt(numVoicesString));
+		
+		// }
 	}
 
 	void defineRects() override
@@ -216,6 +232,17 @@ private:
 
 		//****************************Settings Section******************************
 
+		numVoicesRect = juce::Rectangle<int>(
+			settingsRect.getX(),
+			settingsRect.getY(),
+			settingsRect.getWidth() / numSettingsItems,
+			settingsRect.getHeight() - labelHeight);
+
+		numVoicesLabelRect = juce::Rectangle<int>(
+			numVoicesRect.getX(),
+			numVoicesRect.getY() + numVoicesRect.getHeight(),
+			numVoicesRect.getWidth(),
+			labelHeight);
 
 		//****************************Envelope Section******************************
 
@@ -357,6 +384,14 @@ private:
 
 		//****************************Settings Section******************************
 
+		numVoicesInputBox.setInputRestrictions(1, "0,1,2,3,4,5,6,7,8,9");
+		// numVoicesInputBox.setInputFilter(TextEditor::InputFilter::);
+		// numVoicesInputBox.setReadOnly(true);
+		// numVoicesInputBox.setText(static_cast<String>(
+		// 	*processor.valueTreeState.getRawParameterValue(processor.numVoicesParamName)));
+		numVoicesInputBox.setText(static_cast<String>(processor.numVoices));
+		numVoicesInputBox.addListener(this);
+		numVoicesInputBox.setBounds(numVoicesRect);
 
 		//****************************Visual Envelope Section******************************
 
@@ -433,7 +468,9 @@ private:
 		addAndMakeVisible(filterTypeSelector);
 		addAndMakeVisible(filterCutoffKnob);
 		addAndMakeVisible(filterResonanceKnob);
-		
+
+		addAndMakeVisible(numVoicesInputBox);
+
 		addAndMakeVisible(envelopeAttackKnob);
 		addAndMakeVisible(envelopeDecayKnob);
 		addAndMakeVisible(envelopeSustainKnob);
@@ -443,6 +480,7 @@ private:
 		addAndMakeVisible(ampVolumeKnob);
 	}
 
+	const int numSettingsItems = 5;
 	const int border = 5;
 	const int labelHeight{10};
 
@@ -466,6 +504,8 @@ private:
 	juce::Rectangle<int> filterResonanceKnobRect;
 	juce::Rectangle<int> filterResonanceKnobLabelRect;
 	// Settings Section
+	juce::Rectangle<int> numVoicesRect;
+	juce::Rectangle<int> numVoicesLabelRect;
 
 	// Envelope Section
 	juce::Rectangle<int> envelopeTitleRect;
@@ -490,6 +530,7 @@ private:
 	Slider filterCutoffKnob;
 	Slider filterResonanceKnob;
 	// Settings
+	TextEditor numVoicesInputBox;
 
 	// Envelope
 	Slider envelopeAttackKnob;
@@ -508,7 +549,6 @@ private:
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> filterResonanceAttachment;
 
 	// Settings
-
 
 	// Envelope
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> envelopeAttackAttachment;

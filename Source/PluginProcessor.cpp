@@ -151,14 +151,14 @@ juce::AudioProcessorEditor* MySamplerAudioProcessor::createEditor()
 	return new MySamplerAudioProcessorEditor(*this);
 }
 
-//==============================================================================
-
-
 //=================================PERSISTENCE=============================================
 void MySamplerAudioProcessor::getStateInformation(MemoryBlock& destData)
 {
 	valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
 	              .setProperty(lastLoadedFilePathParamName, currentlyLoadedFilePath, nullptr);
+
+	valueTreeState.state.getOrCreateChildWithName(numVoicesParamName, nullptr)
+	              .setProperty(numVoicesParamName, static_cast<String>(numVoices), nullptr);
 
 	std::unique_ptr<XmlElement> xml(valueTreeState.state.createXml());
 	copyXmlToBinary(*xml, destData);
@@ -174,13 +174,24 @@ void MySamplerAudioProcessor::setStateInformation(const void* data, int sizeInBy
 			valueTreeState.state = ValueTree::fromXml(*loadedParams);
 			currentlyLoadedFilePath = valueTreeState.state
 			                                        .getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
-			                                        .getProperty(lastLoadedFilePathParamName);
+			                                        .getProperty(lastLoadedFilePathParamName, "");
 
 			if (currentlyLoadedFilePath.isNotEmpty())
 			{
-				// noFileLoadedYet = false;
-				// newFileLoaded = true;
 				loadFile(currentlyLoadedFilePath);
+			}
+
+			const String numVoicesString = valueTreeState.state
+			                                             .getOrCreateChildWithName(numVoicesParamName, nullptr)
+			                                             .getProperty(numVoicesParamName, 0);
+
+			numVoices = stringToInt(numVoicesString);
+
+			mSampler.clearVoices();
+			
+			for (auto i = 0; i < numVoices; ++i)
+			{
+				mSampler.addVoice(new SamplerVoice());
 			}
 		}
 	}
@@ -203,6 +214,8 @@ void MySamplerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
 
 void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+	if (noFileLoadedYet) return;
+
 	dsp::AudioBlock<float> block(buffer);
 
 	midiKeyboardState.processNextMidiBuffer(midiMessages, 0, buffer.getNumSamples(), true);
@@ -216,19 +229,21 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	while (midiIterator.getNextEvent(midiMessage, samplePos))
 	{
-		if (midiMessage.isNoteOn()) mIsNotePlayed = true;
+		if (midiMessage.isNoteOn() && currentPlayHasEnded) mIsNotePlayed = false;
+		else if (midiMessage.isNoteOn() && !currentPlayHasEnded) mIsNotePlayed = true;
+		// else if (midiMessage.isNoteOff() & currentPlayHasEnded) currentPlayHasEnded = false;
 		else if (midiMessage.isNoteOff())
 		{
 			mIsNotePlayed = false;
-			// if (restartOnKeyUp)
 			lastPlaybackPosition = 0;
+			currentPlayHasEnded = false;
 		}
 	}
 
 	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
 	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
 
-	if (mIsNotePlayed)
+	if (mIsNotePlayed && !currentPlayHasEnded)
 	{
 		for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
 		{
@@ -243,7 +258,10 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 		lastPlaybackPosition += samplesThisTime;
 
 		if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
+		{
 			lastPlaybackPosition = 0;
+			currentPlayHasEnded = true;
+		}
 	}
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -259,7 +277,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	processEffects(buffer, dsp::ProcessContextReplacing<float>(block));
 
-	HeaderComponent::displayText = static_cast<String>(lastPlaybackPosition);
+	// HeaderComponent::displayText = static_cast<String>(lastPlaybackPosition);
 
 	// Samples for Oscilloscope
 	for (auto i = 0; i < buffer.getNumSamples(); ++i)
@@ -312,8 +330,8 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	// 	? HeaderComponent::setDisplayText(currentlyLoadedFilePath)
 	// 	: HeaderComponent::setDisplayText("Empty");
 
-	valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
-	              .setProperty(lastLoadedFilePathParamName, currentlyLoadedFilePath, nullptr);
+	valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, &undoManager)
+	              .setProperty(lastLoadedFilePathParamName, currentlyLoadedFilePath, &undoManager);
 
 	noFileLoadedYet = false;
 	newFileLoaded = true;
@@ -383,8 +401,9 @@ void MySamplerAudioProcessor::processEffects(AudioBuffer<float>& buffer, dsp::Pr
 {
 	updateEffects();
 
-	filter.process(dspContext);
-	
+	const auto filterType = static_cast<int>(*valueTreeState.getRawParameterValue(filterTypeStateName));
+	if (!filterType == FILTER_TYPES.indexOf(FILTER_NONE)) filter.process(dspContext);
+
 	ampPan.process(dspContext);
 
 	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
@@ -393,9 +412,35 @@ void MySamplerAudioProcessor::processEffects(AudioBuffer<float>& buffer, dsp::Pr
 	}
 }
 
+void MySamplerAudioProcessor::resetNumVoices(int nVoices)
+{
+	numVoices = nVoices;
+
+	valueTreeState.state.getOrCreateChildWithName(numVoicesParamName, nullptr)
+	              .setProperty(numVoicesParamName, static_cast<String>(numVoices), nullptr);
+
+	// HeaderComponent::displayText = "set -> " + static_cast<String>(numVoices);
+
+	mSampler.clearVoices();
+	
+	for (auto i = 0; i < numVoices; ++i)
+	{
+		mSampler.addVoice(new SamplerVoice());
+	}
+}
+
 void MySamplerAudioProcessor::createStateTrees()
 {
 	using Parameter = AudioProcessorValueTreeState::Parameter;
+
+	// Voices
+	// NormalisableRange<float> numVoicesParamRange{static_cast<float>(minVoices), static_cast<float>(maxVoices) };
+	//
+	// valueTreeState.createAndAddParameter(std::make_unique<Parameter>(numVoicesParamName,
+	//                                                                  numVoicesParamName,
+	//                                                                  numVoicesParamName,
+	//                                                                  numVoicesParamRange, defaultVoices,
+	//                                                                  nullptr, nullptr));
 
 	NormalisableRange<float> envelopeParamRange{zeroToTenMinValue, zeroToTenMaxValue};
 	NormalisableRange<float> zeroToOneParamRange{zeroToOneMinValue, zeroToOneMaxValue};

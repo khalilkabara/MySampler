@@ -80,6 +80,12 @@ public:
 	AudioBuffer<float>& getLoadedFileWaveform() { return loadedFileWaveform; }
 	void clearLoadedWaveform() { loadedFileWaveform.clear(); }
 
+	int numVoices{ 1 };
+	const int minVoices{ 0 };
+	const int maxVoices{ 9 };
+	const int defaultVoices{ 1 };
+	const String numVoicesParamName{ "numVoices" };
+	
 	int samplerAttackTime = 0.1;
 	int samplerReleaseTime = 0.1;
 	float loadedFileNumSamples = 10.0;
@@ -87,6 +93,7 @@ public:
 	const float maxAllowedSampleLengthSecs = 30.0;
 	int lastPlaybackPosition;
 	bool mIsNotePlayed{false};
+	bool currentPlayHasEnded{false};
 
 	float lastSampleRate;
 	bool newFileLoaded = false;
@@ -134,10 +141,11 @@ public:
 	const float panMidpointValue = 0.0;
 	const float panStepValue = 0.01;
 
+	const String FILTER_NONE = "None";
 	const String FILTER_LOW_PASS = "Low Pass";
 	const String FILTER_HIGH_PASS = "High Pass";
 	const String FILTER_BAND_PASS = "Band Pass";
-	Array<String> FILTER_TYPES{FILTER_LOW_PASS, FILTER_HIGH_PASS, FILTER_BAND_PASS};
+	Array<String> FILTER_TYPES{ FILTER_NONE, FILTER_LOW_PASS, FILTER_HIGH_PASS, FILTER_BAND_PASS};
 
 	const float filterCutoffMinValue = 20;
 	const float filterCutoffMaxValue = 20000;
@@ -154,6 +162,14 @@ public:
 	void loadFile();
 	void loadFile(File file);
 	void loadFile(String& filePath);
+	void resetNumVoices(int);
+
+	int stringToInt(String str)
+	{
+		auto cp = str.getCharPointer();
+		const auto numVal = juce::CharacterFunctions::readDoubleValue(cp);
+		return static_cast<int>(numVal);
+	}
 
 private:
 
@@ -168,7 +184,6 @@ private:
 	Synthesiser mSampler;
 
 	float ampVolume = 0.8;
-	const int numVoices{1};
 	const int midiNoteForC3{60};
 	const String loadedSampleName = "Sample";
 	const String allowedFileFormats = String();
