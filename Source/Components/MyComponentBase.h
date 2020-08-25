@@ -36,11 +36,13 @@ public:
 		g.setFont(processor.myFont);
 
 		auto* image = &sectionImage;
-		// g.drawImageWithin(*image,
-		//                   getLocalBounds().getX(),
-		//                   getLocalBounds().getY(),
-		//                   getLocalBounds().getWidth(),
-		//                   getLocalBounds().getHeight(), RectanglePlacement::fillDestination);
+		if (image != nullptr) {
+			g.drawImageWithin(*image,
+				getLocalBounds().getX(),
+				getLocalBounds().getY(),
+				getLocalBounds().getWidth(),
+				getLocalBounds().getHeight(), RectanglePlacement::fillDestination);
+		}
 	}
 
 	void resized() override

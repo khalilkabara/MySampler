@@ -22,8 +22,8 @@ public:
 
 	VisualEnvelopeComponent(MySamplerAudioProcessor& p) : MyComponentBase(p)
 	{
-		// visualEnvelopeSectionImage = ImageCache::getFromMemory(BinaryData::reverb_section_art_png,
-		//                                                BinaryData::reverb_section_art_pngSize);
+		visualEnvelopeSectionImage = ImageCache::getFromMemory(BinaryData::display_area_png,
+		                                               BinaryData::display_area_pngSize);
 
 		startTimerHz(fps);
 	}

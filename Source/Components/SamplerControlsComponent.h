@@ -43,6 +43,8 @@ public:
 			processor.valueTreeState, processor.filterResonanceStateName, filterResonanceKnob));
 
 		// Settings
+		numVoicesInputBoxAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.numVoicesStateName, numVoicesInputBox));
 
 		// Envelope
 		envelopeAttackAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
@@ -130,6 +132,11 @@ private:
 
 	void sliderValueChanged(Slider* slider) override
 	{
+
+		if (slider == &numVoicesInputBox)
+		{
+			processor.resetNumVoices(static_cast<int>(slider->getValue()));
+		}
 	}
 
 	void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override
@@ -138,15 +145,6 @@ private:
 
 	void textEditorTextChanged(TextEditor& textEditor) override
 	{
-		// if(textEditor == numVoicesInputBox)
-		// {
-
-		const auto numVoicesString = textEditor.getText();
-		// auto cp = numVoicesString.getCharPointer();
-		// const auto numV = juce::CharacterFunctions::readDoubleValue(cp);
-		processor.resetNumVoices(processor.stringToInt(numVoicesString));
-		
-		// }
 	}
 
 	void defineRects() override
@@ -172,13 +170,13 @@ private:
 			visualEnvelopeRect.getX() + visualEnvelopeRect.getWidth() + border,
 			localBounds.getY() + border,
 			localBounds.getWidth() * 2 / 5 - (2 * border),
-			localBounds.getHeight() / 3 - border);
+			localBounds.getHeight() * 2 / 5 - border);
 
 		filterRect = juce::Rectangle<int>(
 			settingsRect.getX(),
 			settingsRect.getY() + settingsRect.getHeight() + border,
 			settingsRect.getWidth(),
-			(localBounds.getHeight() * 2 / 3) - 2 * border);
+			(localBounds.getHeight() * 3 / 5) - 2 * border);
 
 		ampRect = juce::Rectangle<int>(
 			settingsRect.getX() + settingsRect.getWidth() + border,
@@ -384,12 +382,18 @@ private:
 
 		//****************************Settings Section******************************
 
-		numVoicesInputBox.setInputRestrictions(1, "0,1,2,3,4,5,6,7,8,9");
-		// numVoicesInputBox.setInputFilter(TextEditor::InputFilter::);
-		// numVoicesInputBox.setReadOnly(true);
-		// numVoicesInputBox.setText(static_cast<String>(
-		// 	*processor.valueTreeState.getRawParameterValue(processor.numVoicesParamName)));
-		numVoicesInputBox.setText(static_cast<String>(processor.numVoices));
+		// numVoicesInputBox.setInputRestrictions(1, "0,1,2,3,4,5,6,7,8,9");
+		// // numVoicesInputBox.setInputFilter(TextEditor::InputFilter::);
+		// // numVoicesInputBox.setReadOnly(true);
+		// // numVoicesInputBox.setText(static_cast<String>(
+		// // 	*processor.valueTreeState.getRawParameterValue(processor.numVoicesStateName)));
+		// numVoicesInputBox.setText(static_cast<String>(processor.numVoices));
+
+		numVoicesInputBox.setIncDecButtonsMode(Slider::incDecButtonsDraggable_AutoDirection);
+		numVoicesInputBox.setRange(processor.minVoices, processor.maxVoices, 1);
+		numVoicesInputBox.setTextBoxIsEditable(false);
+		// numVoicesInputBox.setTextBoxStyle(Slider::TextBoxLeft, true, numVoicesRect.getWidth() / 2, labelHeight * 1.5);
+		numVoicesInputBox.setNumDecimalPlacesToDisplay(0);
 		numVoicesInputBox.addListener(this);
 		numVoicesInputBox.setBounds(numVoicesRect);
 
@@ -530,7 +534,8 @@ private:
 	Slider filterCutoffKnob;
 	Slider filterResonanceKnob;
 	// Settings
-	TextEditor numVoicesInputBox;
+	Slider numVoicesInputBox{ Slider::IncDecButtons, Slider::TextBoxBelow };
+	// TextEditor numVoicesInputBox;
 
 	// Envelope
 	Slider envelopeAttackKnob;
@@ -549,6 +554,7 @@ private:
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> filterResonanceAttachment;
 
 	// Settings
+	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> numVoicesInputBoxAttachment;
 
 	// Envelope
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> envelopeAttackAttachment;

@@ -84,7 +84,7 @@ public:
 	const int minVoices{ 0 };
 	const int maxVoices{ 9 };
 	const int defaultVoices{ 1 };
-	const String numVoicesParamName{ "numVoices" };
+	const String numVoicesStateName{ "numVoices" };
 	
 	int samplerAttackTime = 0.1;
 	int samplerReleaseTime = 0.1;

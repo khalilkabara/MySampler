@@ -157,8 +157,8 @@ void MySamplerAudioProcessor::getStateInformation(MemoryBlock& destData)
 	valueTreeState.state.getOrCreateChildWithName(lastLoadedFilePathParamName, nullptr)
 	              .setProperty(lastLoadedFilePathParamName, currentlyLoadedFilePath, nullptr);
 
-	valueTreeState.state.getOrCreateChildWithName(numVoicesParamName, nullptr)
-	              .setProperty(numVoicesParamName, static_cast<String>(numVoices), nullptr);
+	// valueTreeState.state.getOrCreateChildWithName(numVoicesStateName, nullptr)
+	//               .setProperty(numVoicesStateName, static_cast<String>(numVoices), nullptr);
 
 	std::unique_ptr<XmlElement> xml(valueTreeState.state.createXml());
 	copyXmlToBinary(*xml, destData);
@@ -181,14 +181,16 @@ void MySamplerAudioProcessor::setStateInformation(const void* data, int sizeInBy
 				loadFile(currentlyLoadedFilePath);
 			}
 
-			const String numVoicesString = valueTreeState.state
-			                                             .getOrCreateChildWithName(numVoicesParamName, nullptr)
-			                                             .getProperty(numVoicesParamName, 0);
+			// const String numVoicesString = valueTreeState.state
+			//                                              .getOrCreateChildWithName(numVoicesStateName, nullptr)
+			//                                              .getProperty(numVoicesStateName, 0);
+			//
+			// numVoices = stringToInt(numVoicesString);
 
-			numVoices = stringToInt(numVoicesString);
+			numVoices = *valueTreeState.getRawParameterValue(numVoicesStateName);
 
 			mSampler.clearVoices();
-			
+
 			for (auto i = 0; i < numVoices; ++i)
 			{
 				mSampler.addVoice(new SamplerVoice());
@@ -231,7 +233,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	{
 		if (midiMessage.isNoteOn() && currentPlayHasEnded) mIsNotePlayed = false;
 		else if (midiMessage.isNoteOn() && !currentPlayHasEnded) mIsNotePlayed = true;
-		// else if (midiMessage.isNoteOff() & currentPlayHasEnded) currentPlayHasEnded = false;
+			// else if (midiMessage.isNoteOff() & currentPlayHasEnded) currentPlayHasEnded = false;
 		else if (midiMessage.isNoteOff())
 		{
 			mIsNotePlayed = false;
@@ -414,15 +416,19 @@ void MySamplerAudioProcessor::processEffects(AudioBuffer<float>& buffer, dsp::Pr
 
 void MySamplerAudioProcessor::resetNumVoices(int nVoices)
 {
+	// numVoices = nVoices;
+	//
+	// valueTreeState.state.getOrCreateChildWithName(numVoicesStateName, nullptr)
+	//               .setProperty(numVoicesStateName, static_cast<String>(numVoices), nullptr);
+	//
+	// HeaderComponent::displayText = "set -> " + static_cast<String>(numVoices);
+	//
+
+	// numVoices = *valueTreeState.getRawParameterValue(numVoicesStateName);
 	numVoices = nVoices;
 
-	valueTreeState.state.getOrCreateChildWithName(numVoicesParamName, nullptr)
-	              .setProperty(numVoicesParamName, static_cast<String>(numVoices), nullptr);
-
-	// HeaderComponent::displayText = "set -> " + static_cast<String>(numVoices);
-
 	mSampler.clearVoices();
-	
+
 	for (auto i = 0; i < numVoices; ++i)
 	{
 		mSampler.addVoice(new SamplerVoice());
@@ -431,36 +437,39 @@ void MySamplerAudioProcessor::resetNumVoices(int nVoices)
 
 void MySamplerAudioProcessor::createStateTrees()
 {
+	// Voices
 	using Parameter = AudioProcessorValueTreeState::Parameter;
 
-	// Voices
-	// NormalisableRange<float> numVoicesParamRange{static_cast<float>(minVoices), static_cast<float>(maxVoices) };
-	//
-	// valueTreeState.createAndAddParameter(std::make_unique<Parameter>(numVoicesParamName,
-	//                                                                  numVoicesParamName,
-	//                                                                  numVoicesParamName,
-	//                                                                  numVoicesParamRange, defaultVoices,
-	//                                                                  nullptr, nullptr));
+	NormalisableRange<float> numVoicesParamRange{static_cast<float>(minVoices), static_cast<float>(maxVoices)};
 
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(numVoicesStateName,
+	                                                                 numVoicesStateName,
+	                                                                 numVoicesStateName,
+	                                                                 numVoicesParamRange, defaultVoices,
+	                                                                 [](float val) { return String(val, 0); },
+	                                                                 [](String s) { return s.getIntValue(); }));
+
+	// Vol & Pan
 	NormalisableRange<float> envelopeParamRange{zeroToTenMinValue, zeroToTenMaxValue};
 	NormalisableRange<float> zeroToOneParamRange{zeroToOneMinValue, zeroToOneMaxValue};
 	NormalisableRange<float> panParamRange{panMinValue, panMaxValue};
 	NormalisableRange<float> bipolarParamRange{bipolarMinValue, bipolarMaxValue};
 
-	// Vol & Pan
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(ampVolumeStateName,
 	                                                                 ampVolumeStateName,
 	                                                                 ampVolumeStateName,
 	                                                                 zeroToOneParamRange,
 	                                                                 zeroToOneDefaultValue,
-	                                                                 nullptr, nullptr));
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(ampPanStateName,
 	                                                                 ampPanStateName,
 	                                                                 ampPanStateName,
 	                                                                 panParamRange,
 	                                                                 panDefaultValue,
-	                                                                 nullptr, nullptr));
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 
 	// Envelope
 
@@ -469,28 +478,32 @@ void MySamplerAudioProcessor::createStateTrees()
 	                                                                 envelopeAttackStateName,
 	                                                                 envelopeParamRange,
 	                                                                 zeroToTenMinValue,
-	                                                                 nullptr, nullptr));
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(envelopeDecayStateName,
 	                                                                 envelopeDecayStateName,
 	                                                                 envelopeDecayStateName,
 	                                                                 envelopeParamRange,
 	                                                                 zeroToTenDefaultValue,
-	                                                                 nullptr, nullptr));
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(envelopeSustainStateName,
 	                                                                 envelopeSustainStateName,
 	                                                                 envelopeSustainStateName,
 	                                                                 zeroToOneParamRange,
 	                                                                 zeroToOneDefaultValue,
-	                                                                 nullptr, nullptr));
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(envelopeReleaseStateName,
 	                                                                 envelopeReleaseStateName,
 	                                                                 envelopeReleaseStateName,
 	                                                                 envelopeParamRange,
 	                                                                 zeroToTenDefaultValue,
-	                                                                 nullptr, nullptr));
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 
 	// Filter
 	NormalisableRange<float> filterTypeParam(0, FILTER_TYPES.size() - 1);
@@ -499,17 +512,21 @@ void MySamplerAudioProcessor::createStateTrees()
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(filterTypeStateName, filterTypeStateName,
 	                                                                 filterTypeStateName, filterTypeParam, 0,
-	                                                                 nullptr, nullptr));
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(filterCutoffStateName, filterCutoffStateName,
 	                                                                 filterCutoffStateName, filterCutoffParam,
-	                                                                 filterCutoffMidpoint, nullptr, nullptr));
+	                                                                 filterCutoffMidpoint,
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(filterResonanceStateName,
 	                                                                 filterResonanceStateName,
 	                                                                 filterResonanceStateName, filterResonanceParam,
 	                                                                 filterResonanceDefaultValue,
-	                                                                 nullptr, nullptr));
+	                                                                 [](float val) { return String(val, 2); },
+	                                                                 nullptr));
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
