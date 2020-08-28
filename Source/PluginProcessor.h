@@ -80,6 +80,7 @@ public:
 	AudioBuffer<float>& getLoadedFileWaveform() { return loadedFileWaveform; }
 	void clearLoadedWaveform() { loadedFileWaveform.clear(); }
 
+	int currentMidiNoteNumber;
 	int numVoices{ 1 };
 	const int minVoices{ 0 };
 	const int maxVoices{ 9 };
@@ -203,6 +204,7 @@ private:
 	void handleNoteOn(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
 	{
 		ampEnvelope.noteOn();
+		currentMidiNoteNumber = midiNoteNumber;
 	}
 
 	void handleNoteOff(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override

@@ -402,6 +402,8 @@ private:
 
 		//****************************Settings Section******************************
 
+		// numVoicesInputBox.setSliderStyle(Slider::IncDecButtons);
+		// numVoicesInputBox.setTextBoxStyle(Slider::TextBoxAbove, true, numVoicesRect.getWidth() / 2, labelHeight * 1.5);
 		numVoicesInputBox.setIncDecButtonsMode(Slider::incDecButtonsDraggable_AutoDirection);
 		numVoicesInputBox.setRange(processor.minVoices, processor.maxVoices, 1);
 		numVoicesInputBox.setTextBoxIsEditable(false);
@@ -566,10 +568,9 @@ private:
 	Slider filterCutoffKnob;
 	Slider filterResonanceKnob;
 	// Settings
-	Slider numVoicesInputBox{Slider::IncDecButtons, Slider::TextBoxBelow};
+	Slider numVoicesInputBox{ Slider::IncDecButtons , Slider::TextBoxBelow};
 	ToggleButton noteStealSwitchButton;
 	Slider noteStealSlider;
-
 	// Envelope
 	Slider envelopeAttackKnob;
 	Slider envelopeDecayKnob;

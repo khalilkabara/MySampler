@@ -29,6 +29,8 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 
 	mSampler.clearVoices();
 	mSampler.clearSounds();
+	mSampler.setNoteStealingEnabled(static_cast<int>(*valueTreeState.getRawParameterValue(noteStealingStateName)));
+
 	audioFormatManager.registerBasicFormats();
 
 	for (auto i = 0; i < numVoices; ++i)
@@ -205,7 +207,6 @@ void MySamplerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
 {
 	lastSampleRate = sampleRate;
 	mSampler.setCurrentPlaybackSampleRate(sampleRate);
-	mSampler.setNoteStealingEnabled(static_cast<int>(*valueTreeState.getRawParameterValue(noteStealingStateName)));
 	midiKeyboardState.reset();
 	midiKeyboardState.addListener(this);
 
@@ -226,46 +227,46 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-	// MidiMessage midiMessage;
-	// MidiBuffer::Iterator midiIterator{midiMessages};
-	// auto samplePos{0};
-	//
-	// while (midiIterator.getNextEvent(midiMessage, samplePos))
-	// {
-	// 	if (midiMessage.isNoteOn() && currentPlayHasEnded) mIsNotePlayed = false;
-	// 	else if (midiMessage.isNoteOn() && !currentPlayHasEnded) mIsNotePlayed = true;
-	// 		// else if (midiMessage.isNoteOff() & currentPlayHasEnded) currentPlayHasEnded = false;
-	// 	else if (midiMessage.isNoteOff())
-	// 	{
-	// 		mIsNotePlayed = false;
-	// 		lastPlaybackPosition = 0;
-	// 		currentPlayHasEnded = false;
-	// 	}
-	// }
-	//
-	// const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
-	//                                         loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
-	//
-	// if (mIsNotePlayed && !currentPlayHasEnded)
-	// {
-	// 	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
-	// 	{
-	// 		buffer.addFrom(channel,
-	// 		               0,
-	// 		               loadedFileWaveform,
-	// 		               channel % loadedFileWaveform.getNumChannels(),
-	// 		               lastPlaybackPosition,
-	// 		               samplesThisTime);
-	// 	}
-	//
-	// 	lastPlaybackPosition += samplesThisTime;
-	//
-	// 	if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
-	// 	{
-	// 		lastPlaybackPosition = 0;
-	// 		currentPlayHasEnded = true;
-	// 	}
-	// }
+	MidiMessage midiMessage;
+	MidiBuffer::Iterator midiIterator{midiMessages};
+	auto samplePos{0};
+	
+	while (midiIterator.getNextEvent(midiMessage, samplePos))
+	{
+		if (midiMessage.isNoteOn() && currentPlayHasEnded) mIsNotePlayed = false;
+		else if (midiMessage.isNoteOn() && !currentPlayHasEnded) mIsNotePlayed = true;
+			// else if (midiMessage.isNoteOff() & currentPlayHasEnded) currentPlayHasEnded = false;
+		else if (midiMessage.isNoteOff())
+		{
+			mIsNotePlayed = false;
+			lastPlaybackPosition = 0;
+			currentPlayHasEnded = false;
+		}
+	}
+
+	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
+	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
+	
+	if (mIsNotePlayed && !currentPlayHasEnded)
+	{
+		// for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
+		// {
+		// 	buffer.addFrom(channel,
+		// 	               0,
+		// 	               loadedFileWaveform,
+		// 	               channel % loadedFileWaveform.getNumChannels(),
+		// 	               lastPlaybackPosition,
+		// 	               samplesThisTime);
+		// }
+	
+		lastPlaybackPosition += samplesThisTime;
+	
+		// if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
+		// {
+		// 	lastPlaybackPosition = 0;
+		// 	currentPlayHasEnded = true;
+		// }
+	}
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
@@ -273,9 +274,9 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	{
 		buffer.clear(i, 0, buffer.getNumSamples());
 	}
-
+	
 	mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
-
+	
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 	processEffects(buffer, dsp::ProcessContextReplacing<float>(block));
