@@ -205,6 +205,7 @@ void MySamplerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
 {
 	lastSampleRate = sampleRate;
 	mSampler.setCurrentPlaybackSampleRate(sampleRate);
+	mSampler.setNoteStealingEnabled(static_cast<int>(*valueTreeState.getRawParameterValue(noteStealingStateName)));
 	midiKeyboardState.reset();
 	midiKeyboardState.addListener(this);
 
@@ -225,46 +226,46 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-	MidiMessage midiMessage;
-	MidiBuffer::Iterator midiIterator{midiMessages};
-	auto samplePos{0};
-
-	while (midiIterator.getNextEvent(midiMessage, samplePos))
-	{
-		if (midiMessage.isNoteOn() && currentPlayHasEnded) mIsNotePlayed = false;
-		else if (midiMessage.isNoteOn() && !currentPlayHasEnded) mIsNotePlayed = true;
-			// else if (midiMessage.isNoteOff() & currentPlayHasEnded) currentPlayHasEnded = false;
-		else if (midiMessage.isNoteOff())
-		{
-			mIsNotePlayed = false;
-			lastPlaybackPosition = 0;
-			currentPlayHasEnded = false;
-		}
-	}
-
-	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
-	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
-
-	if (mIsNotePlayed && !currentPlayHasEnded)
-	{
-		for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
-		{
-			buffer.addFrom(channel,
-			               0,
-			               loadedFileWaveform,
-			               channel % loadedFileWaveform.getNumChannels(),
-			               lastPlaybackPosition,
-			               samplesThisTime);
-		}
-
-		lastPlaybackPosition += samplesThisTime;
-
-		if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
-		{
-			lastPlaybackPosition = 0;
-			currentPlayHasEnded = true;
-		}
-	}
+	// MidiMessage midiMessage;
+	// MidiBuffer::Iterator midiIterator{midiMessages};
+	// auto samplePos{0};
+	//
+	// while (midiIterator.getNextEvent(midiMessage, samplePos))
+	// {
+	// 	if (midiMessage.isNoteOn() && currentPlayHasEnded) mIsNotePlayed = false;
+	// 	else if (midiMessage.isNoteOn() && !currentPlayHasEnded) mIsNotePlayed = true;
+	// 		// else if (midiMessage.isNoteOff() & currentPlayHasEnded) currentPlayHasEnded = false;
+	// 	else if (midiMessage.isNoteOff())
+	// 	{
+	// 		mIsNotePlayed = false;
+	// 		lastPlaybackPosition = 0;
+	// 		currentPlayHasEnded = false;
+	// 	}
+	// }
+	//
+	// const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
+	//                                         loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
+	//
+	// if (mIsNotePlayed && !currentPlayHasEnded)
+	// {
+	// 	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
+	// 	{
+	// 		buffer.addFrom(channel,
+	// 		               0,
+	// 		               loadedFileWaveform,
+	// 		               channel % loadedFileWaveform.getNumChannels(),
+	// 		               lastPlaybackPosition,
+	// 		               samplesThisTime);
+	// 	}
+	//
+	// 	lastPlaybackPosition += samplesThisTime;
+	//
+	// 	if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
+	// 	{
+	// 		lastPlaybackPosition = 0;
+	// 		currentPlayHasEnded = true;
+	// 	}
+	// }
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
@@ -279,7 +280,9 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	processEffects(buffer, dsp::ProcessContextReplacing<float>(block));
 
-	// HeaderComponent::displayText = static_cast<String>(lastPlaybackPosition);
+	// auto position = buffer.
+	//
+	// HeaderComponent::displayText = static_cast<String>(position);
 
 	// Samples for Oscilloscope
 	for (auto i = 0; i < buffer.getNumSamples(); ++i)
@@ -435,17 +438,60 @@ void MySamplerAudioProcessor::resetNumVoices(int nVoices)
 	}
 }
 
+void MySamplerAudioProcessor::clearFile()
+{
+	clearLoadedWaveform();
+	currentlyLoadedFilePath = "";
+	mSampler.clearSounds();
+
+	noFileLoadedYet = true;
+	newFileLoaded = false;
+}
+
+void MySamplerAudioProcessor::resetSampler()
+{
+	clearFile();
+
+	const ValueTree state = valueTreeState.copyState();
+	const std::unique_ptr<XmlElement> tempXml(state.createXml());
+
+	forEachXmlChildElementWithTagName(*tempXml, child, "PARAM")
+	{
+		const float defaultValue = valueTreeState.getParameter(child->getStringAttribute("id"))->getDefaultValue();
+		const auto range = valueTreeState.getParameter(child->getStringAttribute("id"))->getNormalisableRange();
+		const auto unRangedValue = jmap(defaultValue, range.start, range.end);
+		child->setAttribute("value", unRangedValue);
+	}
+
+	valueTreeState.replaceState(ValueTree::fromXml(*tempXml));
+}
+
+void MySamplerAudioProcessor::setNoteStealing(bool canStealNotes)
+{
+	mSampler.setNoteStealingEnabled(canStealNotes);
+
+	// HeaderComponent::setDisplayText(mSampler.isNoteStealingEnabled() ? "True" : "False");
+}
+
 void MySamplerAudioProcessor::createStateTrees()
 {
 	// Voices
 	using Parameter = AudioProcessorValueTreeState::Parameter;
 
 	NormalisableRange<float> numVoicesParamRange{static_cast<float>(minVoices), static_cast<float>(maxVoices)};
+	NormalisableRange<float> toggleParamRange{static_cast<float>(toggleOffValue), static_cast<float>(toggleOnValue)};
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(numVoicesStateName,
 	                                                                 numVoicesStateName,
 	                                                                 numVoicesStateName,
 	                                                                 numVoicesParamRange, defaultVoices,
+	                                                                 [](float val) { return String(val, 0); },
+	                                                                 [](String s) { return s.getIntValue(); }));
+
+	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(noteStealingStateName,
+	                                                                 noteStealingStateName,
+	                                                                 noteStealingStateName,
+	                                                                 toggleParamRange, toggleOnValue,
 	                                                                 [](float val) { return String(val, 0); },
 	                                                                 [](String s) { return s.getIntValue(); }));
 
@@ -501,7 +547,7 @@ void MySamplerAudioProcessor::createStateTrees()
 	                                                                 envelopeReleaseStateName,
 	                                                                 envelopeReleaseStateName,
 	                                                                 envelopeParamRange,
-	                                                                 zeroToTenDefaultValue,
+	                                                                 releaseDefaultValue,
 	                                                                 [](float val) { return String(val, 2); },
 	                                                                 nullptr));
 
@@ -517,7 +563,7 @@ void MySamplerAudioProcessor::createStateTrees()
 
 	valueTreeState.createAndAddParameter(std::make_unique<Parameter>(filterCutoffStateName, filterCutoffStateName,
 	                                                                 filterCutoffStateName, filterCutoffParam,
-	                                                                 filterCutoffMidpoint,
+	                                                                 filterCutoffDefaultValue,
 	                                                                 [](float val) { return String(val, 2); },
 	                                                                 nullptr));
 

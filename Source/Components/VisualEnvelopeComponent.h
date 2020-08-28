@@ -36,7 +36,7 @@ public:
 	{
 		mPaint(g, visualEnvelopeSectionImage);
 
-		if (debugBoundRects) g.drawRect(getLocalBounds());
+		// if (debugBoundRects) g.drawRect(getLocalBounds());
 
 		drawVisualEnvelope(g);
 	}
@@ -113,19 +113,20 @@ private:
 	void drawVisualEnvelope(Graphics& g)
 	{
 		g.setColour(Colours::whitesmoke);
+		g.setOpacity(0.3f);
 
-		Path path;
-		const auto radius = 1;
-		const auto angle = 300;
-		const auto radius2 = 40;
-		const auto angle2 = 300;
-
+		// Path path;
+		// const auto radius = 1;
+		// const auto angle = 300;
+		// const auto radius2 = 40;
+		// const auto angle2 = 300;
+		//
 		// Point<float> p1(localBounds.getX() + localBounds.getWidth()/ 2, localBounds.getY());
 		// Point<float> p2(localBounds.getX() + localBounds.getWidth(), localBounds.getY() + localBounds.getHeight());
 		// path.cubicTo(p1.getPointOnCircumference(radius, angle), p2.getPointOnCircumference(radius2, angle2), p2);
 		// path.scaleToFit(localBounds.getX() + localBounds.getWidth() / 2, localBounds.getY(),
 		// 	localBounds.getX() + localBounds.getWidth(), localBounds.getY() + localBounds.getHeight(), true);
-
+		//
 		// g.strokePath(path, PathStrokeType(lineThickness));
 		
 		const auto sustainEndY = localBounds.getY() + localBounds.getHeight() / 4;

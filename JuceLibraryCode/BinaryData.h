@@ -15,7 +15,7 @@ namespace BinaryData
     const int            combo_box_pngSize = 12243;
 
     extern const char*   display_area_png;
-    const int            display_area_pngSize = 12243;
+    const int            display_area_pngSize = 8896;
 
     extern const char*   knob_png;
     const int            knob_pngSize = 70946;

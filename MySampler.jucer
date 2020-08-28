@@ -9,7 +9,7 @@
     <GROUP id="{444F90A2-64A0-76AA-B2A0-C84E067B4AE1}" name="Resources">
       <FILE id="MCfRPr" name="background.png" compile="0" resource="1" file="Resources/background.png"/>
       <FILE id="fIhnKo" name="combo_box.png" compile="0" resource="1" file="Resources/combo_box.png"/>
-      <FILE id="UQ11ak" name="display_area.png" compile="0" resource="1"
+      <FILE id="wzveR4" name="display_area.png" compile="0" resource="1"
             file="Resources/display_area.png"/>
       <FILE id="EZC8IW" name="knob.png" compile="0" resource="1" file="Resources/knob.png"/>
       <FILE id="NEOezA" name="slider_gap.png" compile="0" resource="1" file="Resources/slider_gap.png"/>
@@ -27,6 +27,8 @@
               file="Source/LookAndFeel/CustomGraphics.h"/>
       </GROUP>
       <GROUP id="{411586D8-7724-CC67-125E-220663928380}" name="Components">
+        <FILE id="qGt8f8" name="ConfirmationDialog.h" compile="0" resource="0"
+              file="Source/Components/ConfirmationDialog.h"/>
         <FILE id="DhoSOk" name="VisualEnvelopeComponent.h" compile="0" resource="0"
               file="Source/Components/VisualEnvelopeComponent.h"/>
         <FILE id="FAQoB7" name="WaveformComponent.h" compile="0" resource="0"

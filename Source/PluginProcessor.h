@@ -95,7 +95,7 @@ public:
 	bool mIsNotePlayed{false};
 	bool currentPlayHasEnded{false};
 
-	float lastSampleRate;
+	double lastSampleRate;
 	bool newFileLoaded = false;
 	bool noFileLoadedYet = true;
 	bool restartOnKeyUp = false;
@@ -117,9 +117,12 @@ public:
 	const String ampVolumeStateName = "ampVolume";
 	const String ampPanStateName = "ampPan";
 
+	const String noteStealingStateName = "noteStealing";
+
 	const float zeroToTenMinValue = 0.0;
 	const float zeroToTenMaxValue = 10.0;
-	const float zeroToTenDefaultValue = 0.1;
+	const float zeroToTenDefaultValue = 8.0;
+	const float releaseDefaultValue = 0.5;
 	const float zeroToTenMidpointValue = 3.0;
 	const float zeroToTenStepValue = 0.1;
 
@@ -141,6 +144,11 @@ public:
 	const float panMidpointValue = 0.0;
 	const float panStepValue = 0.01;
 
+	const int toggleOffValue = 0;
+	const int toggleOnValue = 1;
+	const int toggleStepValue = 1;
+	const int toggleDefaultValue = 0;
+	
 	const String FILTER_NONE = "None";
 	const String FILTER_LOW_PASS = "Low Pass";
 	const String FILTER_HIGH_PASS = "High Pass";
@@ -163,8 +171,11 @@ public:
 	void loadFile(File file);
 	void loadFile(String& filePath);
 	void resetNumVoices(int);
+	void clearFile();
+	void resetSampler();
+	void setNoteStealing(bool);
 
-	int stringToInt(String str)
+	static int stringToInt(const String& str)
 	{
 		auto cp = str.getCharPointer();
 		const auto numVal = juce::CharacterFunctions::readDoubleValue(cp);

@@ -12,13 +12,14 @@
 
 #include <JuceHeader.h>
 
+
+#include "ConfirmationDialog.h"
 #include "MyComponentBase.h"
 
 //==============================================================================
 
 class HeaderComponent : public MyComponentBase, public Button::Listener, Timer
 {
-
 public:
 	HeaderComponent(MySamplerAudioProcessor& p) : MyComponentBase(p)
 	{
@@ -38,7 +39,6 @@ public:
 
 		// g.fillAll(Colours::aqua);
 		g.drawFittedText(displayText, getLocalBounds(), Justification::centred, 1);
-
 	}
 
 	void resized() override
@@ -52,11 +52,18 @@ public:
 		{
 			loadFile();
 		}
+		if (button == &clearFileButton)
+		{
+			clearFile();
+		}
+		if (button == &resetSamplerButton)
+		{
+			resetSampler();
+		}
 	}
 
 	void buttonStateChanged(Button* button) override
 	{
-		
 	}
 
 	static void setDisplayText(const String text)
@@ -78,16 +85,29 @@ private:
 	void defineRects() override
 	{
 		MyComponentBase::defineRects();
-		displayWidth = localBounds.getWidth() / 3;
+		const auto headerItemWidth = localBounds.getWidth() / 10;
+		const auto displayWidth = headerItemWidth * 4;
 
 		openFileButtonRect = juce::Rectangle<int>(
-			localBounds.getX(),
+			localBounds.getX() + border,
 			localBounds.getY(),
-			localBounds.getWidth() / 10,
+			headerItemWidth,
+			localBounds.getHeight());
+
+		clearFileButtonRect = juce::Rectangle<int>(
+			openFileButtonRect.getX() + openFileButtonRect.getWidth() + border,
+			localBounds.getY(),
+			headerItemWidth,
+			localBounds.getHeight());
+
+		resetSamplerButtonRect = juce::Rectangle<int>(
+			clearFileButtonRect.getX() + clearFileButtonRect.getWidth() + border,
+			localBounds.getY(),
+			headerItemWidth,
 			localBounds.getHeight());
 
 		displayRect = juce::Rectangle<int>(
-			localBounds.getX() + localBounds.getWidth() - displayWidth/2,
+			localBounds.getX() + localBounds.getWidth() - displayWidth / 2,
 			localBounds.getY(),
 			displayWidth,
 			localBounds.getHeight());
@@ -97,14 +117,29 @@ private:
 	{
 		openFileButton.setButtonText("Open File");
 		openFileButton.setVisible(true);
-		openFileButton.changeWidthToFitText();
+		// openFileButton.changeWidthToFitText();
 		openFileButton.addListener(this);
 		openFileButton.setBounds(openFileButtonRect);
+
+		clearFileButton.setButtonText("Clear File");
+		clearFileButton.setVisible(true);
+		// clearFileButton.changeWidthToFitText();
+		clearFileButton.addListener(this);
+		clearFileButton.setBounds(clearFileButtonRect);
+
+		resetSamplerButton.setButtonText("Reset Sampler");
+		resetSamplerButton.setVisible(true);
+		// resetSamplerButton.changeWidthToFitText();
+		resetSamplerButton.addListener(this);
+		resetSamplerButton.setBounds(resetSamplerButtonRect);
 	}
 
 	void addComponents() override
 	{
 		addAndMakeVisible(openFileButton);
+		addAndMakeVisible(clearFileButton);
+		addAndMakeVisible(resetSamplerButton);
+		// addAndMakeVisible(confirmationDialog);
 	}
 
 	void loadFile() const
@@ -112,18 +147,44 @@ private:
 		processor.loadFile();
 	}
 
-	const int border = 10;
+	void clearFile() const { processor.clearFile(); }
+
+	void resetSampler() const
+	{
+		processor.resetSampler();
+	}
+	
+	// void resetSampler() const
+	// {
+	// 	confirmationDialog.reset([this]() { doResetSampler(); }, [this]() { closeResetSampler(); });
+	//
+	// 	confirmationDialog.setBounds(getLocalBounds());
+	// }
+	//
+	// ConfirmationDialog& confirmationDialog;
+	//
+	// void doResetSampler() const { processor.resetSampler(); }
+	//
+	// void closeResetSampler() const
+	// {
+	// 	confirmationDialog.setBounds(0, 0, 0, 0);
+	// }
+
+	const int border = 7.5;
 	const int fps = 10;
-	int displayWidth;
 
 	// Binary Data
 	Image headerSectionImage;
 
 	// Components
 	TextButton openFileButton;
+	TextButton clearFileButton;
+	TextButton resetSamplerButton;
 
 	// Rects
 	juce::Rectangle<int> openFileButtonRect;
+	juce::Rectangle<int> clearFileButtonRect;
+	juce::Rectangle<int> resetSamplerButtonRect;
 	juce::Rectangle<int> displayRect;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderComponent)

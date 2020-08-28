@@ -46,6 +46,9 @@ public:
 		numVoicesInputBoxAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
 			processor.valueTreeState, processor.numVoicesStateName, numVoicesInputBox));
 
+		noteStealingAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
+			processor.valueTreeState, processor.noteStealingStateName, noteStealSlider));
+
 		// Envelope
 		envelopeAttackAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment(
 			processor.valueTreeState, processor.envelopeAttackStateName, envelopeAttackKnob));
@@ -84,7 +87,8 @@ public:
 		g.drawFittedText("Cutoff", filterCutoffKnobLabelRect, Justification::centred, 1);
 		g.drawFittedText("Resonance", filterResonanceKnobLabelRect, Justification::centred, 1);
 
-		g.drawFittedText("Voices", numVoicesLabelRect, Justification::centred, 1);
+		g.drawFittedText("Poly", numVoicesLabelRect, Justification::centred, 1);
+		g.drawFittedText("Note Steal", noteStealingLabelRect, Justification::centred, 1);
 
 		g.drawFittedText("Envelope", envelopeTitleRect, Justification::centred, 1);
 		g.drawFittedText("Attack", envelopeAttackKnobLabelRect, Justification::centred, 1);
@@ -122,6 +126,14 @@ public:
 
 	void buttonStateChanged(Button* button) override
 	{
+		if (button == &noteStealSwitchButton)
+		{
+			noteStealSwitchButton.getToggleState()
+				? noteStealSlider.setValue(processor.toggleOnValue)
+				: noteStealSlider.setValue(processor.toggleOffValue);
+
+			processor.setNoteStealing(noteStealSwitchButton.getToggleState());
+		}
 	}
 
 private:
@@ -132,10 +144,14 @@ private:
 
 	void sliderValueChanged(Slider* slider) override
 	{
-
 		if (slider == &numVoicesInputBox)
 		{
 			processor.resetNumVoices(static_cast<int>(slider->getValue()));
+		}
+		if (slider == &noteStealSlider)
+		{
+			noteStealSwitchButton.setToggleState(noteStealSlider.getValue() == processor.toggleOnValue,
+			                                     NotificationType::dontSendNotification);
 		}
 	}
 
@@ -157,7 +173,7 @@ private:
 		visualEnvelopeRect = juce::Rectangle<int>(
 			localBounds.getX() + border,
 			localBounds.getY() + border,
-			localBounds.getWidth() * 2 / 5 - (2 * border),
+			localBounds.getWidth() * 4 / 10 - (2 * border),
 			localBounds.getHeight() / 2 - border);
 
 		envelopeRect = juce::Rectangle<int>(
@@ -169,7 +185,7 @@ private:
 		settingsRect = juce::Rectangle<int>(
 			visualEnvelopeRect.getX() + visualEnvelopeRect.getWidth() + border,
 			localBounds.getY() + border,
-			localBounds.getWidth() * 2 / 5 - (2 * border),
+			localBounds.getWidth() * 5 / 10 - (2 * border),
 			localBounds.getHeight() * 2 / 5 - border);
 
 		filterRect = juce::Rectangle<int>(
@@ -181,7 +197,7 @@ private:
 		ampRect = juce::Rectangle<int>(
 			settingsRect.getX() + settingsRect.getWidth() + border,
 			settingsRect.getY(),
-			localBounds.getWidth() * 1 / 5,
+			localBounds.getWidth() * 1 / 10,
 			localBounds.getHeight() - 2 * border);
 
 		//****************************Filter Section******************************
@@ -233,13 +249,31 @@ private:
 		numVoicesRect = juce::Rectangle<int>(
 			settingsRect.getX(),
 			settingsRect.getY(),
-			settingsRect.getWidth() / numSettingsItems,
+			settingsRect.getWidth() / numSettingsItems - margin,
 			settingsRect.getHeight() - labelHeight);
 
 		numVoicesLabelRect = juce::Rectangle<int>(
 			numVoicesRect.getX(),
 			numVoicesRect.getY() + numVoicesRect.getHeight(),
 			numVoicesRect.getWidth(),
+			labelHeight);
+
+		tempRect = juce::Rectangle<int>(
+			settingsRect.getX() + settingsRect.getWidth() / numSettingsItems + 2*margin,
+			settingsRect.getY(),
+			settingsRect.getWidth() / numSettingsItems - margin,
+			settingsRect.getHeight() - labelHeight);
+
+		noteStealingRect = juce::Rectangle<int>(
+			tempRect.getX() + tempRect.getWidth() / 2 - toggleSize / 2,
+			tempRect.getY() + tempRect.getHeight() / 2 - toggleSize / 2,
+			toggleSize,
+			toggleSize);
+
+		noteStealingLabelRect = juce::Rectangle<int>(
+			tempRect.getX(),
+			tempRect.getY() + tempRect.getHeight(),
+			tempRect.getWidth(),
 			labelHeight);
 
 		//****************************Envelope Section******************************
@@ -334,20 +368,6 @@ private:
 
 	void defineComponents() override
 	{
-		// Switch
-
-		// reverbSwitchSlider.setRange(0, 1, 1);
-		// reverbSwitchSlider.setVisible(false);
-		// reverbSwitchSlider.addListener(this);
-		//
-		// reverbSwitchButton.setBounds(reverbSwitchRect);
-		// const auto reverbIsEnabled = static_cast<int>(*processor.valueTreeState.getRawParameterValue(
-		// 	processor.reverbSwitchStateName)) == 1;
-		// reverbSwitchButton.setToggleState(reverbIsEnabled, NotificationType::dontSendNotification);
-		// reverbSwitchButton.setVisible(true);
-		// reverbSwitchButton.addListener(this);
-		//
-
 		//****************************Filter Section******************************
 
 		filterTypeSelector.addItemList(processor.FILTER_TYPES, 1);
@@ -382,13 +402,6 @@ private:
 
 		//****************************Settings Section******************************
 
-		// numVoicesInputBox.setInputRestrictions(1, "0,1,2,3,4,5,6,7,8,9");
-		// // numVoicesInputBox.setInputFilter(TextEditor::InputFilter::);
-		// // numVoicesInputBox.setReadOnly(true);
-		// // numVoicesInputBox.setText(static_cast<String>(
-		// // 	*processor.valueTreeState.getRawParameterValue(processor.numVoicesStateName)));
-		// numVoicesInputBox.setText(static_cast<String>(processor.numVoices));
-
 		numVoicesInputBox.setIncDecButtonsMode(Slider::incDecButtonsDraggable_AutoDirection);
 		numVoicesInputBox.setRange(processor.minVoices, processor.maxVoices, 1);
 		numVoicesInputBox.setTextBoxIsEditable(false);
@@ -396,6 +409,19 @@ private:
 		numVoicesInputBox.setNumDecimalPlacesToDisplay(0);
 		numVoicesInputBox.addListener(this);
 		numVoicesInputBox.setBounds(numVoicesRect);
+
+		noteStealSlider.setRange(processor.toggleOffValue, processor.toggleOnValue, processor.toggleStepValue);
+		noteStealSlider.setVisible(false);
+		noteStealSlider.addListener(this);
+
+		noteStealSwitchButton.setBounds(noteStealingRect);
+		const auto chorusIsEnabled = static_cast<int>(*processor.valueTreeState.getRawParameterValue(
+				processor.noteStealingStateName)) == processor.
+			toggleOnValue;
+		noteStealSwitchButton.setToggleState(chorusIsEnabled, NotificationType::dontSendNotification);
+		noteStealSwitchButton.setVisible(true);
+		noteStealSwitchButton.addListener(this);
+
 
 		//****************************Visual Envelope Section******************************
 
@@ -458,7 +484,7 @@ private:
 		ampPanKnob.addListener(this);
 
 		ampVolumeKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
-		ampVolumeKnob.setRange(processor.zeroToOneMinValue, processor.zeroToOneMaxValue, processor.zeroToOneStepValue);
+		ampVolumeKnob.setRange(processor.zeroToOneMinValue, processor.zeroToOneMaxValue, processor.zeroToTenStepValue);
 		ampVolumeKnob.setTextBoxStyle(Slider::NoTextBox, false, 30, 10);
 		ampVolumeKnob.setBounds(ampVolumeKnobRect);
 		ampVolumeKnob.setSkewFactorFromMidPoint(processor.zeroToOneMidpointValue);
@@ -474,6 +500,7 @@ private:
 		addAndMakeVisible(filterResonanceKnob);
 
 		addAndMakeVisible(numVoicesInputBox);
+		addAndMakeVisible(noteStealSwitchButton);
 
 		addAndMakeVisible(envelopeAttackKnob);
 		addAndMakeVisible(envelopeDecayKnob);
@@ -485,7 +512,9 @@ private:
 	}
 
 	const int numSettingsItems = 5;
+	const int margin = 2.5;
 	const int border = 5;
+	const int toggleSize = 15;
 	const int labelHeight{10};
 
 	// Binary Data
@@ -494,6 +523,7 @@ private:
 	//*************************************************************************************
 
 	//Rects - Main
+	juce::Rectangle<int> tempRect;
 	juce::Rectangle<int> filterRect;
 	juce::Rectangle<int> settingsRect;
 	juce::Rectangle<int> envelopeRect;
@@ -510,6 +540,8 @@ private:
 	// Settings Section
 	juce::Rectangle<int> numVoicesRect;
 	juce::Rectangle<int> numVoicesLabelRect;
+	juce::Rectangle<int> noteStealingRect;
+	juce::Rectangle<int> noteStealingLabelRect;
 
 	// Envelope Section
 	juce::Rectangle<int> envelopeTitleRect;
@@ -534,8 +566,9 @@ private:
 	Slider filterCutoffKnob;
 	Slider filterResonanceKnob;
 	// Settings
-	Slider numVoicesInputBox{ Slider::IncDecButtons, Slider::TextBoxBelow };
-	// TextEditor numVoicesInputBox;
+	Slider numVoicesInputBox{Slider::IncDecButtons, Slider::TextBoxBelow};
+	ToggleButton noteStealSwitchButton;
+	Slider noteStealSlider;
 
 	// Envelope
 	Slider envelopeAttackKnob;
@@ -555,6 +588,7 @@ private:
 
 	// Settings
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> numVoicesInputBoxAttachment;
+	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> noteStealingAttachment;
 
 	// Envelope
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> envelopeAttackAttachment;
