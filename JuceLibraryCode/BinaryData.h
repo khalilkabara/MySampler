@@ -8,6 +8,21 @@
 
 namespace BinaryData
 {
+    extern const char*   DroidSansMono_ttf;
+    const int            DroidSansMono_ttfSize = 119380;
+
+    extern const char*   LICENSE;
+    const int            LICENSESize = 11357;
+
+    extern const char*   RobotoLight_ttf;
+    const int            RobotoLight_ttfSize = 126792;
+
+    extern const char*   RobotoRegular_ttf;
+    const int            RobotoRegular_ttfSize = 126072;
+
+    extern const char*   RobotoThin_ttf;
+    const int            RobotoThin_ttfSize = 127584;
+
     extern const char*   background_png;
     const int            background_pngSize = 65490;
 
@@ -33,7 +48,7 @@ namespace BinaryData
     const int            toggle_button_pngSize = 7301;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 8;
+    const int namedResourceListSize = 13;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

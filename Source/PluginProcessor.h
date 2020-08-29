@@ -10,6 +10,8 @@
 
 #include <JuceHeader.h>
 
+#include "MySampler.h"
+
 //==============================================================================
 /**
 */
@@ -81,12 +83,13 @@ public:
 	void clearLoadedWaveform() { loadedFileWaveform.clear(); }
 
 	int currentMidiNoteNumber;
-	int numVoices{ 1 };
-	const int minVoices{ 0 };
-	const int maxVoices{ 9 };
-	const int defaultVoices{ 1 };
-	const String numVoicesStateName{ "numVoices" };
-	
+	int lastMidiNoteNumber;
+	int numVoices{1};
+	const int minVoices{0};
+	const int maxVoices{9};
+	const int defaultVoices{1};
+	const String numVoicesStateName{"numVoices"};
+
 	int samplerAttackTime = 0.1;
 	int samplerReleaseTime = 0.1;
 	float loadedFileNumSamples = 10.0;
@@ -94,7 +97,7 @@ public:
 	const float maxAllowedSampleLengthSecs = 30.0;
 	int lastPlaybackPosition;
 	bool mIsNotePlayed{false};
-	bool currentPlayHasEnded{false};
+	// bool currentPlayHasEnded{false};
 
 	double lastSampleRate;
 	bool newFileLoaded = false;
@@ -149,12 +152,12 @@ public:
 	const int toggleOnValue = 1;
 	const int toggleStepValue = 1;
 	const int toggleDefaultValue = 0;
-	
+
 	const String FILTER_NONE = "None";
 	const String FILTER_LOW_PASS = "Low Pass";
 	const String FILTER_HIGH_PASS = "High Pass";
 	const String FILTER_BAND_PASS = "Band Pass";
-	Array<String> FILTER_TYPES{ FILTER_NONE, FILTER_LOW_PASS, FILTER_HIGH_PASS, FILTER_BAND_PASS};
+	Array<String> FILTER_TYPES{FILTER_NONE, FILTER_LOW_PASS, FILTER_HIGH_PASS, FILTER_BAND_PASS};
 
 	const float filterCutoffMinValue = 20;
 	const float filterCutoffMaxValue = 20000;
@@ -193,7 +196,7 @@ private:
 	juce::dsp::Panner<float> ampPan;
 	juce::dsp::StateVariableTPTFilter<float> filter;
 	// juce::dsp::Oscillator<float> lfo;
-	Synthesiser mSampler;
+	MySampler mSampler;
 
 	float ampVolume = 0.8;
 	const int midiNoteForC3{60};
@@ -205,11 +208,24 @@ private:
 	{
 		ampEnvelope.noteOn();
 		currentMidiNoteNumber = midiNoteNumber;
+		// mIsNotePlayed = true;
+		//
+		// if (lastMidiNoteNumber != midiNoteNumber)
+		// {
+		// 	lastPlaybackPosition = 0;
+		// }
+		// lastMidiNoteNumber = midiNoteNumber;
 	}
 
 	void handleNoteOff(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
 	{
 		ampEnvelope.noteOff();
+
+		// if (lastMidiNoteNumber == midiNoteNumber)
+		// {
+		// 	mIsNotePlayed = false;
+		// 	lastPlaybackPosition = 0;
+		// }
 	}
 
 	void createStateTrees();

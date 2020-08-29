@@ -264,11 +264,20 @@ private:
 			settingsRect.getWidth() / numSettingsItems - margin,
 			settingsRect.getHeight() - labelHeight);
 
-		noteStealingRect = juce::Rectangle<int>(
-			tempRect.getX() + tempRect.getWidth() / 2 - toggleSize / 2,
-			tempRect.getY() + tempRect.getHeight() / 2 - toggleSize / 2,
-			toggleSize,
-			toggleSize);
+		noteStealingRect = tempRect;
+		
+		//
+		// tempRect = juce::Rectangle<int>(
+		// 	settingsRect.getX() + settingsRect.getWidth() / numSettingsItems + 2*margin,
+		// 	settingsRect.getY(),
+		// 	settingsRect.getWidth() / numSettingsItems - margin,
+		// 	settingsRect.getHeight() - labelHeight);
+
+		// noteStealingRect = juce::Rectangle<int>(
+		// 	tempRect.getX() + tempRect.getWidth() / 2 - toggleSize / 2,
+		// 	tempRect.getY() + tempRect.getHeight() / 2 - toggleSize / 2,
+		// 	toggleSize,
+		// 	toggleSize);
 
 		noteStealingLabelRect = juce::Rectangle<int>(
 			tempRect.getX(),

@@ -7,6 +7,9 @@
 */
 
 #include "PluginProcessor.h"
+
+#include "MySamplerSound.h"
+#include "MySamplerVoice.h"
 #include "PluginEditor.h"
 
 //==============================================================================
@@ -35,7 +38,8 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 
 	for (auto i = 0; i < numVoices; ++i)
 	{
-		mSampler.addVoice(new SamplerVoice());
+		// mSampler.addVoice(new MySamplerVoice(*this, lastSampleRate));
+		mSampler.addVoice(new MySamplerVoice());
 	}
 
 	for (auto i = 0; i < bufferHistoryLength; ++i)
@@ -230,24 +234,21 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	MidiMessage midiMessage;
 	MidiBuffer::Iterator midiIterator{midiMessages};
 	auto samplePos{0};
-	
+
 	while (midiIterator.getNextEvent(midiMessage, samplePos))
 	{
-		if (midiMessage.isNoteOn() && currentPlayHasEnded) mIsNotePlayed = false;
-		else if (midiMessage.isNoteOn() && !currentPlayHasEnded) mIsNotePlayed = true;
-			// else if (midiMessage.isNoteOff() & currentPlayHasEnded) currentPlayHasEnded = false;
+		if (midiMessage.isNoteOn()) mIsNotePlayed = true;
 		else if (midiMessage.isNoteOff())
 		{
 			mIsNotePlayed = false;
 			lastPlaybackPosition = 0;
-			currentPlayHasEnded = false;
 		}
 	}
 
 	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
 	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
-	
-	if (mIsNotePlayed && !currentPlayHasEnded)
+
+	if (mIsNotePlayed)
 	{
 		// for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
 		// {
@@ -258,14 +259,13 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 		// 	               lastPlaybackPosition,
 		// 	               samplesThisTime);
 		// }
-	
+
 		lastPlaybackPosition += samplesThisTime;
-	
-		// if (lastPlaybackPosition == loadedFileWaveform.getNumSamples())
-		// {
-		// 	lastPlaybackPosition = 0;
-		// 	currentPlayHasEnded = true;
-		// }
+
+		if (lastPlaybackPosition >= loadedFileWaveform.getNumSamples())
+		{
+			lastPlaybackPosition = 0;
+		}
 	}
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -274,9 +274,9 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 	{
 		buffer.clear(i, 0, buffer.getNumSamples());
 	}
-	
+
 	mSampler.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
-	
+
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 	processEffects(buffer, dsp::ProcessContextReplacing<float>(block));
@@ -329,8 +329,8 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	BigInteger midiNotesRange;
 	midiNotesRange.setRange(0, 128, true);
 
-	mSampler.addSound(new SamplerSound(loadedSampleName, *audioFormatReader, midiNotesRange,
-	                                   midiNoteForC3, samplerAttackTime, samplerReleaseTime, loadedSampleLengthSecs));
+	mSampler.addSound(new MySamplerSound(loadedSampleName, *audioFormatReader, midiNotesRange,
+	                                     midiNoteForC3, samplerAttackTime, samplerReleaseTime, loadedSampleLengthSecs));
 
 	// currentlyLoadedFilePath.isNotEmpty()
 	// 	? HeaderComponent::setDisplayText(currentlyLoadedFilePath)
@@ -420,23 +420,19 @@ void MySamplerAudioProcessor::processEffects(AudioBuffer<float>& buffer, dsp::Pr
 
 void MySamplerAudioProcessor::resetNumVoices(int nVoices)
 {
-	// numVoices = nVoices;
-	//
-	// valueTreeState.state.getOrCreateChildWithName(numVoicesStateName, nullptr)
-	//               .setProperty(numVoicesStateName, static_cast<String>(numVoices), nullptr);
-	//
-	// HeaderComponent::displayText = "set -> " + static_cast<String>(numVoices);
-	//
-
-	// numVoices = *valueTreeState.getRawParameterValue(numVoicesStateName);
 	numVoices = nVoices;
 
+	// mSampler.clearSounds();
+	// loadFile(currentlyLoadedFilePath);
 	mSampler.clearVoices();
 
 	for (auto i = 0; i < numVoices; ++i)
 	{
-		mSampler.addVoice(new SamplerVoice());
+		// mSampler.addVoice(new MySamplerVoice(*this, lastSampleRate));
+		mSampler.addVoice(new MySamplerVoice());
 	}
+
+	mSampler.setCurrentPlaybackSampleRate(lastSampleRate);
 }
 
 void MySamplerAudioProcessor::clearFile()

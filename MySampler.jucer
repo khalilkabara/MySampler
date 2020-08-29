@@ -6,6 +6,16 @@
               pluginRTASCategory="0,2048" pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
               displaySplashScreen="1">
   <MAINGROUP id="YNfNzI" name="MySampler">
+    <GROUP id="{EC2A1BDC-9A90-9A40-C9E2-0F379008960E}" name="Fonts">
+      <FILE id="I4B6hZ" name="DroidSansMono.ttf" compile="0" resource="1"
+            file="Fonts/DroidSansMono.ttf"/>
+      <FILE id="cPhwHf" name="LICENSE" compile="0" resource="1" file="Fonts/LICENSE"/>
+      <FILE id="S4zshm" name="Roboto-Light.ttf" compile="0" resource="1"
+            file="Fonts/Roboto-Light.ttf"/>
+      <FILE id="uBf9YW" name="Roboto-Regular.ttf" compile="0" resource="1"
+            file="Fonts/Roboto-Regular.ttf"/>
+      <FILE id="YTr309" name="Roboto-Thin.ttf" compile="0" resource="1" file="Fonts/Roboto-Thin.ttf"/>
+    </GROUP>
     <GROUP id="{444F90A2-64A0-76AA-B2A0-C84E067B4AE1}" name="Resources">
       <FILE id="MCfRPr" name="background.png" compile="0" resource="1" file="Resources/background.png"/>
       <FILE id="fIhnKo" name="combo_box.png" compile="0" resource="1" file="Resources/combo_box.png"/>
@@ -20,12 +30,6 @@
             file="Resources/toggle_button.png"/>
     </GROUP>
     <GROUP id="{F09EFD52-0F48-D725-8BF6-B396DEBD89D8}" name="Source">
-      <GROUP id="{DBADA14A-4D66-8202-9AC6-7235CEDDCC71}" name="LookAndFeel">
-        <FILE id="S0mXwX" name="CustomGraphics.cpp" compile="1" resource="0"
-              file="Source/LookAndFeel/CustomGraphics.cpp"/>
-        <FILE id="iQuCjB" name="CustomGraphics.h" compile="0" resource="0"
-              file="Source/LookAndFeel/CustomGraphics.h"/>
-      </GROUP>
       <GROUP id="{411586D8-7724-CC67-125E-220663928380}" name="Components">
         <FILE id="qGt8f8" name="ConfirmationDialog.h" compile="0" resource="0"
               file="Source/Components/ConfirmationDialog.h"/>
@@ -44,6 +48,19 @@
         <FILE id="DcCvuD" name="MyComponentBase.h" compile="0" resource="0"
               file="Source/Components/MyComponentBase.h"/>
       </GROUP>
+      <GROUP id="{DBADA14A-4D66-8202-9AC6-7235CEDDCC71}" name="LookAndFeel">
+        <FILE id="Eb5yPu" name="fonts.cpp" compile="1" resource="0" file="Source/LookAndFeel/fonts.cpp"/>
+        <FILE id="sLFvkH" name="fonts.h" compile="0" resource="0" file="Source/LookAndFeel/fonts.h"/>
+        <FILE id="S0mXwX" name="CustomGraphics.cpp" compile="1" resource="0"
+              file="Source/LookAndFeel/CustomGraphics.cpp"/>
+        <FILE id="iQuCjB" name="CustomGraphics.h" compile="0" resource="0"
+              file="Source/LookAndFeel/CustomGraphics.h"/>
+      </GROUP>
+      <FILE id="o0YH8f" name="MySampler.h" compile="0" resource="0" file="Source/MySampler.h"/>
+      <FILE id="epcoT3" name="MySamplerVoice.h" compile="0" resource="0"
+            file="Source/MySamplerVoice.h"/>
+      <FILE id="QEH1WO" name="MySamplerSound.h" compile="0" resource="0"
+            file="Source/MySamplerSound.h"/>
       <FILE id="hqQYYu" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="jIsZVf" name="PluginProcessor.h" compile="0" resource="0"
