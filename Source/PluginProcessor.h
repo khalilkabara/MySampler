@@ -82,8 +82,10 @@ public:
 	AudioBuffer<float>& getLoadedFileWaveform() { return loadedFileWaveform; }
 	void clearLoadedWaveform() { loadedFileWaveform.clear(); }
 
-	int currentMidiNoteNumber;
-	int lastMidiNoteNumber;
+	int lastMidiNoteNumber{60};
+	float lastMidiNoteHertz{261.6};
+	const float frequencyOfHighestKey{261.6};
+	const float frequencyOfLowestKey{8};
 	int numVoices{1};
 	const int minVoices{0};
 	const int maxVoices{9};
@@ -94,7 +96,7 @@ public:
 	int samplerReleaseTime = 0.1;
 	float loadedFileNumSamples = 10.0;
 	float loadedSampleLengthSecs;
-	const float maxAllowedSampleLengthSecs = 30.0;
+	const float maxAllowedSampleLengthSecs = 5.0;
 	int lastPlaybackPosition;
 	bool mIsNotePlayed{false};
 	// bool currentPlayHasEnded{false};
@@ -172,7 +174,7 @@ public:
 	const float filterResonanceStep = 0.01;
 
 	void loadFile();
-	void loadFile(File file);
+	void loadFile(const File& file);
 	void loadFile(String& filePath);
 	void resetNumVoices(int);
 	void clearFile();
@@ -207,25 +209,16 @@ private:
 	void handleNoteOn(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
 	{
 		ampEnvelope.noteOn();
-		currentMidiNoteNumber = midiNoteNumber;
-		// mIsNotePlayed = true;
-		//
-		// if (lastMidiNoteNumber != midiNoteNumber)
-		// {
-		// 	lastPlaybackPosition = 0;
-		// }
-		// lastMidiNoteNumber = midiNoteNumber;
+		lastMidiNoteNumber = midiNoteNumber;
+		lastMidiNoteHertz = MidiMessage::getMidiNoteInHertz(lastMidiNoteNumber);
+		mIsNotePlayed = true;
 	}
 
 	void handleNoteOff(MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override
 	{
 		ampEnvelope.noteOff();
-
-		// if (lastMidiNoteNumber == midiNoteNumber)
-		// {
-		// 	mIsNotePlayed = false;
-		// 	lastPlaybackPosition = 0;
-		// }
+		lastPlaybackPosition = 0;
+		mIsNotePlayed = false;
 	}
 
 	void createStateTrees();

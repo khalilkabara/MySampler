@@ -39,7 +39,7 @@ MySamplerAudioProcessor::MySamplerAudioProcessor()
 	for (auto i = 0; i < numVoices; ++i)
 	{
 		// mSampler.addVoice(new MySamplerVoice(*this, lastSampleRate));
-		mSampler.addVoice(new MySamplerVoice());
+		mSampler.addVoice(new SamplerVoice());
 	}
 
 	for (auto i = 0; i < bufferHistoryLength; ++i)
@@ -231,22 +231,24 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-	MidiMessage midiMessage;
-	MidiBuffer::Iterator midiIterator{midiMessages};
-	auto samplePos{0};
+	// MidiMessage midiMessage;
+	// MidiBuffer::Iterator midiIterator{midiMessages};
+	// auto samplePos{0};
+	//
+	// while (midiIterator.getNextEvent(midiMessage, samplePos))
+	// {
+	// 	if (midiMessage.isNoteOn()) mIsNotePlayed = true;
+	// 	else if (midiMessage.isNoteOff())
+	// 	{
+	// 		mIsNotePlayed = false;
+	// 		lastPlaybackPosition = 0;
+	// 	}
+	// }
 
-	while (midiIterator.getNextEvent(midiMessage, samplePos))
-	{
-		if (midiMessage.isNoteOn()) mIsNotePlayed = true;
-		else if (midiMessage.isNoteOff())
-		{
-			mIsNotePlayed = false;
-			lastPlaybackPosition = 0;
-		}
-	}
+	const auto timeVal = jmap<float>(lastMidiNoteHertz, frequencyOfLowestKey,
+	                                 frequencyOfHighestKey, 0, 1);
 
-	const auto samplesThisTime = juce::jmin(buffer.getNumSamples(),
-	                                        loadedFileWaveform.getNumSamples() - lastPlaybackPosition);
+	const auto samplesThisTime = static_cast<float>(buffer.getNumSamples()) * timeVal;
 
 	if (mIsNotePlayed)
 	{
@@ -262,10 +264,6 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 		lastPlaybackPosition += samplesThisTime;
 
-		if (lastPlaybackPosition >= loadedFileWaveform.getNumSamples())
-		{
-			lastPlaybackPosition = 0;
-		}
 	}
 
 	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -303,7 +301,7 @@ void MySamplerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 //######################################################################################################################################
 
-void MySamplerAudioProcessor::loadFile(const File file)
+void MySamplerAudioProcessor::loadFile(const File& file)
 {
 	const WildcardFileFilter fileFormatFilter(audioFormatManager.getWildcardForAllFormats(), {}, {});
 	if (!fileFormatFilter.isFileSuitable(file)) return;
@@ -315,7 +313,7 @@ void MySamplerAudioProcessor::loadFile(const File file)
 	audioFormatReader = audioFormatManager.createReaderFor(file);
 	loadedFileNumSamples = static_cast<float>(audioFormatReader->lengthInSamples);
 	loadedSampleLengthSecs = loadedFileNumSamples / audioFormatReader->sampleRate;
-	if (loadedSampleLengthSecs > maxAllowedSampleLengthSecs) loadedSampleLengthSecs = maxAllowedSampleLengthSecs;
+	// loadedSampleLengthSecs = jmin(static_cast<float>(loadedSampleLengthSecs), maxAllowedSampleLengthSecs);
 
 	// HeaderComponent::displayText = static_cast<String>(loadedFileNumSamples);
 
@@ -429,7 +427,7 @@ void MySamplerAudioProcessor::resetNumVoices(int nVoices)
 	for (auto i = 0; i < numVoices; ++i)
 	{
 		// mSampler.addVoice(new MySamplerVoice(*this, lastSampleRate));
-		mSampler.addVoice(new MySamplerVoice());
+		mSampler.addVoice(new SamplerVoice());
 	}
 
 	mSampler.setCurrentPlaybackSampleRate(lastSampleRate);

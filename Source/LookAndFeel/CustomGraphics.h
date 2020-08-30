@@ -41,7 +41,10 @@ public:
 private:
 
 	void DrawKnobImage(Graphics& g, Image& img, int x, int y, int width, int height, float angle) const;
-
+	void fillSplitVerticalRect(Graphics& g, float y1, float y2, float width, Colour fill_color) const;
+	void fillSplitHorizontalRect(Graphics& g, float y1, float y2, float width, Colour fill_color) const;
+	void fillVerticalRect(Graphics& g, float x1, float x2, float height) const;
+	void fillHorizontalRect(Graphics& g, float x1, float x2, float height) const;
 	static bool IsOfType(const std::string& type, TooltipClient& slider);
 
 	bool isSwitch = false;
@@ -62,6 +65,8 @@ private:
 
 	float linear_rail_width = 40;
 
+	Fonts mFonts = *Fonts::instance();
+	
 	Font proportional_regular_ = Font(Typeface::createSystemTypefaceFor(
 		BinaryData::RobotoRegular_ttf, BinaryData::RobotoRegular_ttfSize));
 	Font proportional_light_ = Font(Typeface::createSystemTypefaceFor(
@@ -69,8 +74,4 @@ private:
 	Font monospace_ = Font(Typeface::createSystemTypefaceFor(
 		BinaryData::DroidSansMono_ttf, BinaryData::DroidSansMono_ttfSize));
 
-	void fillSplitVerticalRect(Graphics& g, float y1, float y2, float width, Colour fill_color) const;
-	void fillSplitHorizontalRect(Graphics& g, float y1, float y2, float width, Colour fill_color) const;
-	void fillVerticalRect(Graphics& g, float x1, float x2, float height) const;
-	void fillHorizontalRect(Graphics& g, float x1, float x2, float height) const;
 };
