@@ -111,6 +111,7 @@ private:
 			localBounds.getY(),
 			displayWidth,
 			localBounds.getHeight());
+
 	}
 
 	void defineComponents() override
@@ -140,6 +141,18 @@ private:
 		addAndMakeVisible(clearFileButton);
 		addAndMakeVisible(resetSamplerButton);
 		// addAndMakeVisible(confirmationDialog);
+
+		//*********************************************
+		const auto tempRect = juce::Rectangle<int>(
+			getLocalBounds().getWidth() - 50, getLocalBounds().getY(), 40, getLocalBounds().getHeight());
+
+		tempSlider.setBounds(tempRect);
+		tempSlider.setSliderStyle(Slider::LinearBar);
+		tempSlider.setTextBoxStyle(Slider::NoTextBox, false, 30, 10);
+		tempSlider.setRange(0, 10, 1);
+		tempSlider.setVisible(true);
+		tempSlider.setValue(6);
+		addAndMakeVisible(tempSlider);
 	}
 
 	void loadFile() const
@@ -153,7 +166,7 @@ private:
 	{
 		processor.resetSampler();
 	}
-	
+
 	// void resetSampler() const
 	// {
 	// 	confirmationDialog.reset([this]() { doResetSampler(); }, [this]() { closeResetSampler(); });
@@ -170,6 +183,8 @@ private:
 	// 	confirmationDialog.setBounds(0, 0, 0, 0);
 	// }
 
+	Slider tempSlider;
+	
 	const int border = 7.5;
 	const int fps = 10;
 

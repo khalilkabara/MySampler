@@ -209,7 +209,8 @@ void CustomGraphics::drawLinearSlider(Graphics& g, int x, int y, int width, int 
 	}
 
 	float pos = slider_pos - 1.0f;
-	if (style == Slider::SliderStyle::LinearBar)
+	if (style == Slider::SliderStyle::LinearBar ||
+		style == Slider::SliderStyle::LinearHorizontal)
 	{
 		g.setColour(Colour(0x22000000));
 		float w = slider.getWidth();
@@ -231,7 +232,8 @@ void CustomGraphics::drawLinearSlider(Graphics& g, int x, int y, int width, int 
 		g.setColour(thumb_color);
 		g.fillRect(pos, 0.0f, 2.0f, h);
 	}
-	else if (style == Slider::SliderStyle::LinearBarVertical)
+	else if (style == Slider::SliderStyle::LinearBarVertical || 
+		style == Slider::SliderStyle::LinearVertical)
 	{
 		g.setColour(Colour(0x22000000));
 		float w = slider.getWidth();
@@ -276,8 +278,8 @@ void CustomGraphics::drawRotarySlider(Graphics& g, int x, int y, int width, int 
 		PathStrokeType(stroke_width, PathStrokeType::beveled, PathStrokeType::butt);
 
 	float current_angle = start_angle + slider_t * (end_angle - start_angle);
-	float end_x = full_radius + 0.8f * knob_radius * sin(current_angle);
-	float end_y = full_radius - 0.8f * knob_radius * cos(current_angle);
+	float end_x = width/2 + 0.8f * knob_radius * sin(current_angle);
+	float end_y = height/2 - 0.8f * knob_radius * cos(current_angle);
 
 	if (slider.getInterval() == 1)
 	{
@@ -318,7 +320,10 @@ void CustomGraphics::drawRotarySlider(Graphics& g, int x, int y, int width, int 
 	else isBipolarEffect = false;
 	
 	Path rail;
-	rail.addCentredArc(full_radius, full_radius, small_outer_radius, small_outer_radius,
+	// rail.addCentredArc(full_radius, full_radius, small_outer_radius, small_outer_radius,
+	//                    0.0f, start_angle, end_angle, true);
+
+	rail.addCentredArc(width / 2, height / 2, small_outer_radius, small_outer_radius,
 	                   0.0f, start_angle, end_angle, true);
 
 	if (active)
@@ -330,12 +335,12 @@ void CustomGraphics::drawRotarySlider(Graphics& g, int x, int y, int width, int 
 
 	if (bipolar)
 	{
-		active_section.addCentredArc(full_radius, full_radius, small_outer_radius, small_outer_radius,
+		active_section.addCentredArc(width / 2, height / 2, small_outer_radius, small_outer_radius,
 		                             0.0f, 0.0f, current_angle - 2.0f * juce::MathConstants<float>::pi, true);
 	}
 	else
 	{
-		active_section.addCentredArc(full_radius, full_radius, small_outer_radius, small_outer_radius,
+		active_section.addCentredArc(width / 2, height / 2, small_outer_radius, small_outer_radius,
 		                             0.0f, start_angle, current_angle, true);
 	}
 
@@ -351,8 +356,8 @@ void CustomGraphics::drawRotarySlider(Graphics& g, int x, int y, int width, int 
 	else
 		g.setColour(Colour(0xff444444));
 
-	g.fillEllipse(full_radius - knob_radius,
-	              full_radius - knob_radius,
+	g.fillEllipse(width/2 - knob_radius,
+	              height/2 - knob_radius,
 	              2.0f * knob_radius,
 	              2.0f * knob_radius);
 
@@ -361,13 +366,14 @@ void CustomGraphics::drawRotarySlider(Graphics& g, int x, int y, int width, int 
 	else
 		g.setColour(Colour(0xff555555));
 
-	g.drawEllipse(full_radius - knob_radius + stroke_width / 4.0f + 0.5f,
-	              full_radius - knob_radius + stroke_width / 4.0f + 0.5f,
+	// g.setColour(Colours::red);
+	g.drawEllipse(width/2 - knob_radius + stroke_width / 4.0f + 0.5f,
+	              height/2 - knob_radius + stroke_width / 4.0f + 0.5f,
 	              2.0f * knob_radius - stroke_width / 2.0f - 1.0f,
 	              2.0f * knob_radius - stroke_width / 2.0f - 1.0f, 1.5f);
 
 	g.setColour(Colour(0xff999999));
-	g.drawLine(full_radius, full_radius, end_x, end_y, 1.0f);
+	g.drawLine(width / 2, height / 2, end_x, end_y, 1.0f);
 }
 
 void CustomGraphics::drawToggleButton(Graphics& g, ToggleButton& button,
@@ -375,22 +381,25 @@ void CustomGraphics::drawToggleButton(Graphics& g, ToggleButton& button,
 {
 	static const DropShadow shadow(Colour(0x88000000), 1.0f, Point<int>(0, 0));
 	static float stroke_percent = 0.1f;
-	float ratio = button.getWidth() / 20.0f;
-	float padding = ratio * 3.0f;
-	float hover_padding = ratio;
+	const auto areaWidth = button.getWidth();
+	const auto areaHeight = button.getHeight();
+	const auto ratio = button.getWidth() / 20.0f;
+	const auto padding = ratio * 3.0f;
+	const auto hover_padding = ratio;
+	const auto minDirection = jmin(areaWidth, areaHeight);
 
 	float full_radius = std::min(button.getWidth(), button.getHeight()) / 2.0;
 	float stroke_width = 2.0f * full_radius * stroke_percent;
 	PathStrokeType stroke_type(stroke_width, PathStrokeType::beveled, PathStrokeType::rounded);
 	float outer_radius = full_radius - stroke_width - padding;
 	Path outer;
-	outer.addCentredArc(full_radius, full_radius, outer_radius, outer_radius,
+	outer.addCentredArc(areaWidth/2, areaHeight/2, outer_radius, outer_radius,
 	                    juce::MathConstants<float>::pi, -POWER_ARC_ANGLE, POWER_ARC_ANGLE, true);
 
 	Path shadow_path;
 	stroke_type.createStrokedPath(shadow_path, outer);
 	shadow.drawForPath(g, shadow_path);
-	Rectangle<int> bar_shadow_rect(full_radius - 1.0f, padding, 2.0f, full_radius - padding);
+	Rectangle<int> bar_shadow_rect(areaWidth / 2 - 1.0f, padding, 2.0f, full_radius - padding);
 	shadow.drawForRectangle(g, bar_shadow_rect);
 
 	if (button.getToggleState())
@@ -399,19 +408,19 @@ void CustomGraphics::drawToggleButton(Graphics& g, ToggleButton& button,
 		g.setColour(Colours::grey);
 
 	g.strokePath(outer, stroke_type);
-	g.fillRoundedRectangle(full_radius - 1.0f, padding, 2.0f, full_radius - padding, 1.0f);
+	g.fillRoundedRectangle(areaWidth / 2 - 1.0f, padding, 2.0f, full_radius - padding, 1.0f);
 
 	if (is_down)
 	{
 		g.setColour(Colour(0x11000000));
-		g.fillEllipse(hover_padding, hover_padding,
-		              button.getWidth() - 2 * hover_padding, button.getHeight() - 2 * hover_padding);
+		g.fillEllipse(areaWidth / 2 - minDirection / 2, areaHeight / 2 - minDirection / 2,
+			minDirection, minDirection);
 	}
 	else if (hover)
 	{
 		g.setColour(Colour(0x11ffffff));
-		g.fillEllipse(hover_padding, hover_padding,
-		              button.getWidth() - 2 * hover_padding, button.getHeight() - 2 * hover_padding);
+		g.fillEllipse(areaWidth / 2 - minDirection/2 + 3, areaHeight/2 - minDirection/2 + 3,
+			minDirection- 6, minDirection - 6);
 	}
 }
 

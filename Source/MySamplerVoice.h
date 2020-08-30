@@ -25,7 +25,6 @@ private:
 
 	bool setSampleRate(int sampleRate)
 	{
-		
 	}
 	
 	bool canPlaySound(SynthesiserSound*) override

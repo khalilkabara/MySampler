@@ -495,7 +495,7 @@ private:
 		ampPanKnob.addListener(this);
 
 		ampVolumeKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
-		ampVolumeKnob.setRange(processor.zeroToOneMinValue, processor.zeroToOneMaxValue, processor.zeroToTenStepValue);
+		ampVolumeKnob.setRange(processor.zeroToOneMinValue, processor.zeroToOneMaxValue, processor.zeroToOneStepValue);
 		ampVolumeKnob.setTextBoxStyle(Slider::NoTextBox, false, 30, 10);
 		ampVolumeKnob.setBounds(ampVolumeKnobRect);
 		ampVolumeKnob.setSkewFactorFromMidPoint(processor.zeroToOneMidpointValue);
