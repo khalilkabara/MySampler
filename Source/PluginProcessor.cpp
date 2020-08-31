@@ -315,8 +315,6 @@ void MySamplerAudioProcessor::loadFile(const File& file)
 	loadedSampleLengthSecs = loadedFileNumSamples / audioFormatReader->sampleRate;
 	// loadedSampleLengthSecs = jmin(static_cast<float>(loadedSampleLengthSecs), maxAllowedSampleLengthSecs);
 
-	// HeaderComponent::displayText = static_cast<String>(loadedFileNumSamples);
-
 	loadedFileWaveform.setSize(2, static_cast<int>(loadedFileNumSamples));
 
 	audioFormatReader->read(&loadedFileWaveform, 0, static_cast<int>(loadedFileNumSamples),

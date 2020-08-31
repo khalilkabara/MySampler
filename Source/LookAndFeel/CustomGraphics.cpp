@@ -403,7 +403,7 @@ void CustomGraphics::drawToggleButton(Graphics& g, ToggleButton& button,
 	shadow.drawForRectangle(g, bar_shadow_rect);
 
 	if (button.getToggleState())
-		g.setColour(Colours::white);
+		g.setColour(Colours::cyan);
 	else
 		g.setColour(Colours::grey);
 

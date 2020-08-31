@@ -12,6 +12,8 @@
 
 #include <JuceHeader.h>
 
+
+#include "ADSREditor.h"
 #include "MyComponentBase.h"
 #include "VisualEnvelopeComponent.h"
 
@@ -80,6 +82,11 @@ public:
 
 		// g.drawFittedText("Reverb", titleRect, Justification::centred, 1);
 
+		// adsrEditor.(g, 
+		// 	juce::Rectangle<float>(visualEnvelopeRect.getX(), visualEnvelopeRect.getY(), 
+		// 		visualEnvelopeRect.getWidth(), visualEnvelopeRect.getHeight()));
+
+		
 		g.setFont(processor.myFontTiny);
 
 		g.drawFittedText("Filter", filterTitleRect, Justification::centred, 1);
@@ -139,6 +146,7 @@ public:
 private:
 
 	VisualEnvelopeComponent visualEnvelopeComponent;
+	ADSREditor::EnvelopeData adsrEditor;
 
 	// Functions
 
@@ -441,6 +449,11 @@ private:
 		visualEnvelopeComponent.setBounds(visualEnvelopeRect);
 		addAndMakeVisible(&visualEnvelopeComponent);
 
+		// adsrEditor.setSize(visualEnvelopeRect.getWidth(), visualEnvelopeRect.getHeight());
+		// // adsrEditor.build();
+		// adsrEditor.setBounds(visualEnvelopeRect);
+		// addAndMakeVisible(&adsrEditor);
+
 		//****************************Envelope Section******************************
 
 		envelopeAttackKnob.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
@@ -523,9 +536,9 @@ private:
 	}
 
 	const int numSettingsItems = 5;
-	const int margin = 2.5;
-	const int border = 5;
-	const int toggleSize = 15;
+	const float margin = 2.5;
+	const float border = 5.0;
+	const float toggleSize = 15.0;
 	const int labelHeight{10};
 
 	// Binary Data

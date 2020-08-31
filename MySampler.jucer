@@ -31,6 +31,8 @@
     </GROUP>
     <GROUP id="{F09EFD52-0F48-D725-8BF6-B396DEBD89D8}" name="Source">
       <GROUP id="{411586D8-7724-CC67-125E-220663928380}" name="Components">
+        <FILE id="FEoV6g" name="ADSREditor.cpp" compile="1" resource="0" file="Source/Components/ADSREditor.cpp"/>
+        <FILE id="GjLOQE" name="ADSREditor.h" compile="0" resource="0" file="Source/Components/ADSREditor.h"/>
         <FILE id="qGt8f8" name="ConfirmationDialog.h" compile="0" resource="0"
               file="Source/Components/ConfirmationDialog.h"/>
         <FILE id="DhoSOk" name="VisualEnvelopeComponent.h" compile="0" resource="0"
